@@ -12,9 +12,14 @@ import java.io.IOException;
  * Created by mid on 29.10.14.
  */
 public class Common extends HttpServlet {
+    DBAdapter adapter;
+
+    public Common(DBAdapter ada) {
+        adapter = ada;
+    }
+
     public void doPost(HttpServletRequest request,
                       HttpServletResponse response) throws ServletException, IOException {
-        DBAdapter adapter = new DBAdapter();
         adapter.clear();
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
@@ -22,5 +27,7 @@ public class Common extends HttpServlet {
         response.getWriter().print("{\"code\": 0, \"response\": \"OK\"}");
 
     }
+
+
 
 }
