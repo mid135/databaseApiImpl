@@ -12,13 +12,11 @@ import java.io.IOException;
 /**
  * Created by mid on 06.11.14.
  */
-public class User extends HttpServlet {
+
+
+public class User  extends HttpServlet {
 
     DBAdapter adapter;
-
-    public User(DBAdapter ada) {
-        adapter = ada;
-    }
 
     public void doGet(HttpServletRequest request,
                       HttpServletResponse response) throws ServletException, IOException {
@@ -50,10 +48,11 @@ public class User extends HttpServlet {
     public void doPost(HttpServletRequest request,
                        HttpServletResponse response) throws ServletException,RuntimeException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
+        response.setContentType("application/json");
+        DBAdapter adapter = DBAdapter.getDBAdapter();
+        JSONObject output = new JSONObject();
         if  (urlRequest[4].equals("create")) {
-            response.setContentType("application/json");
-            DBAdapter adapter = DBAdapter.getDBAdapter();
-            JSONObject output = new JSONObject();
+
             try {
                 JSONObject input = adapter.parseJSON(request.getReader());
 
@@ -65,14 +64,15 @@ public class User extends HttpServlet {
                 }
             } catch (NullPointerException e) {
                 output.clear();
-                output.put("code",2);
-                output.put("response","invalid query");
+                output.put("code", 2);
+                output.put("response", "invalid query");
             }
             response.getWriter().println(output.toString());
             response.setStatus(HttpServletResponse.SC_OK);
-
         }
-
-
     }
 }
+
+
+
+

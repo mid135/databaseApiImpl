@@ -14,12 +14,11 @@ import java.io.IOException;
 public class Common extends HttpServlet {
     DBAdapter adapter;
 
-    public Common(DBAdapter ada) {
-        adapter = ada;
-    }
+
 
     public void doPost(HttpServletRequest request,
                       HttpServletResponse response) throws ServletException, IOException {
+        adapter = DBAdapter.getDBAdapter();
         adapter.clear();
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);

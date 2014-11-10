@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
  * Created by mid on 29.10.14.
  */
 public class DBAdapter {
-    private static final String URL = "jdbc:mysql://localhost:3306";
+    private static final String URL = "jdbc:mysql://localhost:3306/?useEncoding=true;characterEncoding=UTF-8";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "1234QWer";
 
@@ -103,7 +103,7 @@ public class DBAdapter {
                 statement.setObject(i+1, args.get(i));
 
             }
-            statement.executeUpdate();//TODO здесь может не только update быть???
+            statement.executeUpdate();
             int id = 0;
             ResultSet res = statement.getGeneratedKeys();
             while (res.next()) {
@@ -127,6 +127,7 @@ public class DBAdapter {
                 statement.execute("TRUNCATE TABLE `forum_db`.`User`;");
                 statement.execute("TRUNCATE TABLE `forum_db`.`thread_followers`;");
                 statement.execute("TRUNCATE TABLE `forum_db`.`user_followers`;");
+                statement.execute("SET NAMES utf8;");
             } catch (SQLException e) {
                 System.err.println("Ошибка");
         }
@@ -177,16 +178,13 @@ public class DBAdapter {
                     args.add(0,res.getString("user_mail"));
                     CachedRowSetImpl forum = doSelect("SELECT `id`,`name`,`email`,`about`,`user_name`,`isAnonymous` FROM `forum_db`.`User` as t1 WHERE t1.`email`=?; ",args);
                     if (forum!= null && forum.next()) {
-                        user.put("about", forum.getString(4));
-                        user.put("email", forum.getString(3));
+                        user.put("about", forum.getString(4).equals("")? null:forum.getString(4));
+                        user.put("email", forum.getString(3).equals("")? null:forum.getString(3));
                         user.put("id", forum.getString(1));
-                        user.put("name", forum.getString(2));
-                        user.put("username", forum.getString(5));
-                        if (forum.getInt(6) == 0) {
-                            user.put("isAnonymous", false);
-                        } else {
-                            user.put("isAnonymous", true);
-                        }
+                        user.put("name", forum.getString(2).equals("")? null:forum.getString(2));
+                        user.put("username", forum.getString(5).equals("")? null:forum.getString(5));
+                        user.put("isAnonymous", forum.getString(6).equals("true"));
+                        response.put("user",user);
                     }
                     //TODO доделать followers, following, subscriptions
                 } else {
@@ -300,5 +298,18 @@ public class DBAdapter {
         }
 
         return out;
+    }
+
+    public JSONObject topic_create(String forum,String title,Boolean isClosed, String user, String date,String message,String slug) {
+        JSONObject out = new JSONObject();
+        JSONObject resp = new JSONObject();
+
+
+
+        ArrayList args = new ArrayList();
+
+
+        return out;
+
     }
 }

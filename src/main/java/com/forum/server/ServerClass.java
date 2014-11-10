@@ -14,11 +14,13 @@ public class ServerClass {
         Frontend frontend = new Frontend();
 
 
-        DBAdapter adapter = new DBAdapter();
+        //DBAdapter adapter = new DBAdapter();
 
-        Common common = new Common(adapter);
-        Forum forum = new Forum(adapter);
-        User user = new User(adapter);
+        Common common = new Common();
+        Forum forum = new Forum();
+        User user = new User();
+        Topic thread = new Topic();
+
 
         Server server = new Server(8080);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);

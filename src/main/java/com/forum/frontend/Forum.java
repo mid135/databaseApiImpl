@@ -24,14 +24,13 @@ import org.json.simple.*;
 public class Forum extends HttpServlet{
     DBAdapter adapter;
 
-    public Forum(DBAdapter ada) {
-        adapter = ada;
-    }
+
 
     public void doGet(HttpServletRequest request,
                        HttpServletResponse response) throws ServletException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
         JSONObject output  = new JSONObject();
         try {
             switch (urlRequest[4]) {
@@ -56,9 +55,11 @@ public class Forum extends HttpServlet{
             }
             return;
         } catch (NullPointerException e) {
-            output.clear();
+            //output.clear();
             output.put("code",2);
             output.put("response","invalid query");
+            response.getWriter().println(output.toString());
+            response.setStatus(HttpServletResponse.SC_OK);
         }
     }
 
@@ -66,6 +67,7 @@ public class Forum extends HttpServlet{
     public void doPost(HttpServletRequest request,
                       HttpServletResponse response) throws ServletException,RuntimeException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
+        adapter=DBAdapter.getDBAdapter();
         if  (urlRequest[4].equals("create")) {
             response.setContentType("application/json");
 
