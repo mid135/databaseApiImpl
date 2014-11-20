@@ -43,7 +43,7 @@ public class Topic extends HttpServlet {
     public void doPost(HttpServletRequest request,
                        HttpServletResponse response) throws ServletException,RuntimeException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
-        response.setContentType("application/json");
+        response.setContentType("application/json;charset=utf-8");
         DBAdapter adapter = DBAdapter.getDBAdapter();
         JSONObject output = new JSONObject();
         switch (urlRequest[4]) {

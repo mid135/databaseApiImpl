@@ -20,7 +20,7 @@ public class Common extends HttpServlet {
                       HttpServletResponse response) throws ServletException, IOException {
         adapter = DBAdapter.getDBAdapter();
         adapter.clear();
-        response.setContentType("application/json");
+        response.setContentType("application/json;charset=utf-8");
         response.setStatus(HttpServletResponse.SC_OK);
 
         response.getWriter().print("{\"code\": 0, \"response\": \"OK\"}");

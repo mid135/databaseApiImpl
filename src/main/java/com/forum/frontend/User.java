@@ -24,7 +24,7 @@ public class User  extends HttpServlet {
         DBAdapter adapter = DBAdapter.getDBAdapter();
         switch (urlRequest[4]) {
             case "details":
-                response.setContentType("application/json");
+                response.setContentType("application/json;charset=utf-8");
                 response.setStatus(HttpServletResponse.SC_OK);
                 JSONObject out = new JSONObject();
                 String us = request.getParameter("user");
@@ -48,7 +48,7 @@ public class User  extends HttpServlet {
     public void doPost(HttpServletRequest request,
                        HttpServletResponse response) throws ServletException,RuntimeException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
-        response.setContentType("application/json");
+        response.setContentType("application/json;charset=utf-8");
         DBAdapter adapter = DBAdapter.getDBAdapter();
         JSONObject output = new JSONObject();
         if  (urlRequest[4].equals("create")) {

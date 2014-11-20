@@ -29,7 +29,7 @@ public class Forum extends HttpServlet{
     public void doGet(HttpServletRequest request,
                        HttpServletResponse response) throws ServletException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
-        response.setContentType("application/json");
+        response.setContentType("application/json;charset=utf-8");
         response.setCharacterEncoding("UTF-8");
         JSONObject output  = new JSONObject();
         try {
@@ -69,8 +69,8 @@ public class Forum extends HttpServlet{
         String[] urlRequest = request.getRequestURI().toString().split("/");
         adapter=DBAdapter.getDBAdapter();
         if  (urlRequest[4].equals("create")) {
-            response.setContentType("application/json");
-
+            response.setContentType("application/json;charset=utf-8");
+            response.setCharacterEncoding("UTF-8");
             JSONObject input=adapter.parseJSON(request.getReader());
             JSONObject output;
             output = adapter.forum_create(input.get("name").toString(),input.get("short_name").toString(),input.get("user").toString());

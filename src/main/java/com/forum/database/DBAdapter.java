@@ -25,7 +25,7 @@ import java.util.LinkedHashMap;
  * Created by mid on 29.10.14.
  */
 public class DBAdapter {
-    private static final String URL = "jdbc:mysql://localhost:3306/?useEncoding=true;characterEncoding=UTF-8";
+    private static final String URL = "jdbc:mysql://localhost:3306/?characterEncoding=UTF-8";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "1234QWer";
 
