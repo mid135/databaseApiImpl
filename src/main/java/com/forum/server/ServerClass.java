@@ -29,6 +29,7 @@ public class ServerClass {
         context.addServlet(new ServletHolder(common),"/db/api/clear/");
         context.addServlet(new ServletHolder(forum),"/db/api/forum/*");
         context.addServlet(new ServletHolder(user),"/db/api/user/*");
+        context.addServlet(new ServletHolder(thread),"/db/api/thread/*");
 
         server.start();
         server.join();

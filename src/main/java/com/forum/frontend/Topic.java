@@ -23,7 +23,13 @@ public class Topic extends HttpServlet {
         DBAdapter adapter = DBAdapter.getDBAdapter();
         switch (urlRequest[4]) {
             case "details": {
+                response.setContentType("application/json;charset=utf-8");
+                response.setStatus(HttpServletResponse.SC_OK);
+                JSONObject out = new JSONObject();
+                String id = request.getParameter("thread");
 
+                out = adapter.topic_details(id,request.getParameter("related")!=null ?request.getParameter("related").split(","):null);
+                response.getWriter().println(out.toString());
                 break;
             }
             case "listPosts": {
@@ -49,8 +55,17 @@ public class Topic extends HttpServlet {
         switch (urlRequest[4]) {
             case "create":{
                 try {
-
-                    //dapter.topic_create();
+                    JSONObject input = adapter.parseJSON(request.getReader());
+                    //TODO читаемый вызов функции
+                    output=adapter.topic_create(input.get("forum").toString(),
+                                         input.get("title").toString(),
+                                         Boolean.parseBoolean(input.get("isClosed").toString()),
+                                         Boolean.parseBoolean(input.get("isDeleted").toString()),
+                                         input.get("user").toString(),
+                                         input.get("date").toString(),
+                                         input.get("message").toString(),
+                                         input.get("slug").toString()
+                            );
 
                 } catch (NullPointerException e) {
                     output.clear();

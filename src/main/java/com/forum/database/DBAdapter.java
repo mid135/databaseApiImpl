@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.Buffer;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 
 /**
@@ -112,12 +113,13 @@ public class DBAdapter {
             conection.close();
             return  id;
         } catch (SQLException e) {
-            System.err.println("Ошибка базы данных");
+            System.err.println("Ошибка базы данных"+query+args.toString());
             return -1;
 
         }
     }
 
+    //system
     public void clear() {//очистить БД
         try(Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
             Statement statement = connection.createStatement()) {
@@ -132,6 +134,8 @@ public class DBAdapter {
                 System.err.println("Ошибка");
         }
     }
+
+    //forun
     public JSONObject forum_create(String name, String shortName, String user) {
         JSONObject out = new JSONObject();
         ArrayList args = new ArrayList();
@@ -198,9 +202,11 @@ public class DBAdapter {
         return out;
     }
 
+    //user
     public JSONObject user_create(String username, String about,Boolean isAnomymous, String name, String email) {
         JSONObject out = new JSONObject();
         JSONObject resp = new JSONObject();
+        if (email.equals("richard.nixon@example.com")) System.err.println("one");
         out.put("code",0);
         ArrayList args = new ArrayList();
         args.add(0,email==null?"":email);
@@ -233,13 +239,9 @@ public class DBAdapter {
         }
         return out;
     }
-
     public JSONObject user_details(String mail) {
         JSONObject out = new JSONObject();
         JSONObject resp = new JSONObject();
-
-
-
         ArrayList args = new ArrayList();
         args.add(0,mail);
         CachedRowSetImpl user = doSelect("SELECT `id`,`name`,`user_name`,`about`,`email`,`isAnonymous` FROM `forum_db`.`User` as t1 WHERE t1.email=?; ",args);
@@ -300,15 +302,126 @@ public class DBAdapter {
         return out;
     }
 
-    public JSONObject topic_create(String forum,String title,Boolean isClosed, String user, String date,String message,String slug) {
+    //topic aka thread
+    public JSONObject topic_create(String forum,String title,Boolean isClosed,Boolean isDeleted, String user, String date,String message,String slug) {
         JSONObject out = new JSONObject();
         JSONObject resp = new JSONObject();
-
-
-
         ArrayList args = new ArrayList();
+        args.add(0,forum);
+        args.add(1,title);
+        args.add(2,user);
+        args.add(3,date);
+        args.add(4,isClosed?1:0);
+        args.add(5,isDeleted?1:0);
+        args.add(6,message);
+        args.add(7,slug);
+        int resId = doSQL("INSERT INTO `forum_db`.`Thread` (`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`) VALUES (?,?,?,?,?,?,?,?);",args);
+        if (resId > 0) {
+            out.put("code",0);
+            args.clear();
+            args.add(0,resId);
+            CachedRowSetImpl topic = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug` FROM `forum_db`.`Thread` as t1 WHERE t1.id=?;",args);
+            try {
+                    while (topic.next()) {
+                    resp.put("date", topic.getString(5));
+                    resp.put("forum", topic.getString(2));
+                    resp.put("id", topic.getString(1));
+                    resp.put("isDeleted", (topic.getString(7).equals("1")));
+                    resp.put("isClosed", (topic.getString(6).equals("1")));
+                    resp.put("message", topic.getString(8));
+                    resp.put("slug", topic.getString(9));
+                    resp.put("title", topic.getString(3));
+                    resp.put("user", topic.getString(4));
+                    out.put("response",resp);
+                }
+            } catch (SQLException e) {
 
+            }
+        } else {
+            out.put("code",5);
+            out.put("response", "User already exists");
+        }
 
+        return out;
+
+    }
+    public JSONObject topic_details(String topicId,String[] related) {
+        JSONObject out = new JSONObject();
+        ArrayList args = new ArrayList();
+        args.add(0,Integer.valueOf(topicId));
+        CachedRowSetImpl res =  doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes` FROM `forum_db`.`Thread` as t1 WHERE t1.id=?;",args);
+        try {
+            while (res.next()) {
+                out.put("code", 0);
+                LinkedHashMap response = new LinkedHashMap();
+                LinkedHashMap user = new LinkedHashMap();
+                LinkedHashMap forum = new LinkedHashMap();
+
+                response.put("date", res.getDate(5)+" "+res.getTime(5));
+                response.put("forum", res.getString(2));
+                response.put("id", res.getString(1));
+                response.put("isDeleted", (res.getString(7).equals("true")));
+                response.put("isClosed", (res.getString(6).equals("true")));
+                response.put("message", res.getString(8));
+                response.put("slug", res.getString(9));
+                response.put("title", res.getString(3));
+                response.put("user", res.getString(4));
+                response.put("likes", res.getInt(10));
+                if (related != null && Arrays.asList(related).contains("user")) {
+                    args.clear();
+                    args.add(0,res.getString("user"));
+                    CachedRowSetImpl userRow = doSelect("SELECT `id`,`name`,`user_name`,`about`,`email`,`isAnonymous` FROM `forum_db`.`User` as t1 WHERE t1.email=?;",args);
+                    if (userRow!= null && userRow.next()) {
+                        user.put("about", userRow.getString(4).equals("")? null:userRow.getString(4));
+                        user.put("email", userRow.getString(3).equals("")? null:userRow.getString(3));
+                        user.put("id", userRow.getString(1));
+                        user.put("name", userRow.getString(2).equals("")? null:userRow.getString(2));
+                        user.put("username", userRow.getString(5).equals("")? null:userRow.getString(5));
+                        user.put("isAnonymous", userRow.getString(6).equals("true"));
+                        response.put("user",user);
+                    }
+                    //TODO доделать followers, following, subscriptions
+                } else {
+                    response.put("user", res.getString("forum"));
+                }
+                if (related != null && Arrays.asList(related).contains("user")) {
+                    args.clear();
+                    args.add(0,res.getString("forum"));
+                    CachedRowSetImpl userRow = doSelect("SELECT `id`,`name`,`short_name`,`user_mail` FROM `forum_db`.`Forum` as t1 WHERE t1.`short_name`=?; ",args);
+                    if (userRow!= null && userRow.next()) {
+                        user.put("about", userRow.getString(4).equals("")? null:userRow.getString(4));
+                        user.put("email", userRow.getString(3).equals("")? null:userRow.getString(3));
+                        user.put("id", userRow.getString(1));
+                        user.put("name", userRow.getString(2).equals("")? null:userRow.getString(2));
+                        user.put("username", userRow.getString(5).equals("")? null:userRow.getString(5));
+                        user.put("isAnonymous", userRow.getString(6).equals("true"));
+                        response.put("user",user);
+                    }
+                    //TODO доделать followers, following, subscriptions
+                } else {
+                    response.put("user", res.getString("user"));
+                }
+                if (forum != null) {
+                    args.clear();
+                    args.add(0,res.getString("forum"));
+                    CachedRowSetImpl forumRow = doSelect("SELECT `id`,`name`,`short_name`,`user_mail` FROM `forum_db`.`Forum` as t1 WHERE t1.`short_name`=?;",args);
+                    if (forumRow!= null && forumRow.next()) {
+                        forum.put("id", forumRow.getString(1));
+                        forum.put("name", forumRow.getString(2));
+                        forum.put("short_name", forumRow.getString(3));
+                        forum.put("user", forumRow.getString(4));
+
+                        response.put("forum",forum);
+                    }
+                    //TODO доделать followers, following, subscriptions
+                } else {
+                    response.put("forum", res.getString("forum"));
+                }
+                out.put("response",response);
+            }
+        } catch (SQLException r) {
+            return null;
+        }
         return out;
 
     }
