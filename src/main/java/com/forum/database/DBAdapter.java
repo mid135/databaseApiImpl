@@ -326,8 +326,8 @@ public class DBAdapter {
                     resp.put("date", topic.getString(5));
                     resp.put("forum", topic.getString(2));
                     resp.put("id", topic.getString(1));
-                    resp.put("isDeleted", (topic.getString(7).equals("1")));
-                    resp.put("isClosed", (topic.getString(6).equals("1")));
+                    resp.put("isDeleted", (topic.getString(7).equals("true")));
+                    resp.put("isClosed", (topic.getString(6).equals("true")));
                     resp.put("message", topic.getString(8));
                     resp.put("slug", topic.getString(9));
                     resp.put("title", topic.getString(3));
@@ -358,14 +358,13 @@ public class DBAdapter {
                 LinkedHashMap forum = new LinkedHashMap();
 
                 response.put("date", res.getDate(5)+" "+res.getTime(5));
-                response.put("forum", res.getString(2));
+
                 response.put("id", res.getString(1));
                 response.put("isDeleted", (res.getString(7).equals("true")));
                 response.put("isClosed", (res.getString(6).equals("true")));
                 response.put("message", res.getString(8));
                 response.put("slug", res.getString(9));
                 response.put("title", res.getString(3));
-                response.put("user", res.getString(4));
                 response.put("likes", res.getInt(10));
                 if (related != null && Arrays.asList(related).contains("user")) {
                     args.clear();
@@ -373,27 +372,10 @@ public class DBAdapter {
                     CachedRowSetImpl userRow = doSelect("SELECT `id`,`name`,`user_name`,`about`,`email`,`isAnonymous` FROM `forum_db`.`User` as t1 WHERE t1.email=?;",args);
                     if (userRow!= null && userRow.next()) {
                         user.put("about", userRow.getString(4).equals("")? null:userRow.getString(4));
-                        user.put("email", userRow.getString(3).equals("")? null:userRow.getString(3));
+                        user.put("email", userRow.getString(3).equals("")? null:userRow.getString(5));
                         user.put("id", userRow.getString(1));
                         user.put("name", userRow.getString(2).equals("")? null:userRow.getString(2));
-                        user.put("username", userRow.getString(5).equals("")? null:userRow.getString(5));
-                        user.put("isAnonymous", userRow.getString(6).equals("true"));
-                        response.put("user",user);
-                    }
-                    //TODO доделать followers, following, subscriptions
-                } else {
-                    response.put("user", res.getString("forum"));
-                }
-                if (related != null && Arrays.asList(related).contains("user")) {
-                    args.clear();
-                    args.add(0,res.getString("forum"));
-                    CachedRowSetImpl userRow = doSelect("SELECT `id`,`name`,`short_name`,`user_mail` FROM `forum_db`.`Forum` as t1 WHERE t1.`short_name`=?; ",args);
-                    if (userRow!= null && userRow.next()) {
-                        user.put("about", userRow.getString(4).equals("")? null:userRow.getString(4));
-                        user.put("email", userRow.getString(3).equals("")? null:userRow.getString(3));
-                        user.put("id", userRow.getString(1));
-                        user.put("name", userRow.getString(2).equals("")? null:userRow.getString(2));
-                        user.put("username", userRow.getString(5).equals("")? null:userRow.getString(5));
+                        user.put("username", userRow.getString(5).equals("")? null:userRow.getString(3));
                         user.put("isAnonymous", userRow.getString(6).equals("true"));
                         response.put("user",user);
                     }
@@ -401,28 +383,72 @@ public class DBAdapter {
                 } else {
                     response.put("user", res.getString("user"));
                 }
-                if (forum != null) {
+                if (related != null && Arrays.asList(related).contains("forum")) {
                     args.clear();
                     args.add(0,res.getString("forum"));
-                    CachedRowSetImpl forumRow = doSelect("SELECT `id`,`name`,`short_name`,`user_mail` FROM `forum_db`.`Forum` as t1 WHERE t1.`short_name`=?;",args);
+                    CachedRowSetImpl forumRow = doSelect("SELECT `id`,`name`,`short_name`,`user_mail` FROM `forum_db`.`Forum` as t1 WHERE t1.`short_name`=?; ",args);
                     if (forumRow!= null && forumRow.next()) {
                         forum.put("id", forumRow.getString(1));
                         forum.put("name", forumRow.getString(2));
                         forum.put("short_name", forumRow.getString(3));
                         forum.put("user", forumRow.getString(4));
-
                         response.put("forum",forum);
                     }
                     //TODO доделать followers, following, subscriptions
                 } else {
                     response.put("forum", res.getString("forum"));
                 }
+
                 out.put("response",response);
             }
         } catch (SQLException r) {
             return null;
         }
         return out;
+
+    }
+    public JSONObject post_create(String date,Integer threadId, String message,String user,String forum,
+                                  Integer parent, Boolean isApproved,Boolean isHighlighted,Boolean isEdited,
+                                  Boolean isSpam,Boolean isDeleted) {
+        JSONObject out = new JSONObject();
+        JSONObject resp = new JSONObject();
+        ArrayList args = new ArrayList();
+        args.add(0,isApproved);
+        args.add(1,isHighlighted);
+        args.add(2,isEdited);
+        args.add(3,isSpam);
+        args.add(4,isDeleted);
+        args.add(5,date);
+        args.add(6,threadId);
+        args.add(7,user);
+        args.add(8,forum);
+        args.add(9,message);
+
+        int resId = doSQL("INSERT INTO `forum_db`.`Post` (`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread_id`,`user_email`,`forum`,`message`) VALUES (?,?,?,?,?,?,?,?,?,?);",args);
+        if (resId > 0) {
+            out.put("code",0);
+            args.clear();
+            args.add(0,resId);
+            CachedRowSetImpl post = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread_id`,`user_email`,`forum`,`message` FROM `forum_db`.`Post` as t1 WHERE t1.`id`=? ",args);
+            try {
+                while (post.next()) {
+                    resp.put("id", post.getString(0));
+                    resp.put("isApproved", post.getString(1));
+                    resp.put("isHighLighted", post.getString(2));
+                    resp.put("isEdited", post.getString(0));
+                    out.put("response",resp);
+                }
+            } catch (SQLException e) {
+
+            }
+        } else {
+            out.put("code",5);
+            out.put("response", "User already exists");
+        }
+
+        return out;
+
+
 
     }
 }
