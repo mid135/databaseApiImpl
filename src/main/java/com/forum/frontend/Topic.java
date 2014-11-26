@@ -26,8 +26,8 @@ public class Topic extends HttpServlet {
                 response.setContentType("application/json;charset=utf-8");
                 response.setStatus(HttpServletResponse.SC_OK);
                 JSONObject out = new JSONObject();
-                String id = request.getParameter("thread");
-
+                Integer id = Integer.valueOf(request.getParameter("thread"));
+                System.out.println(request.toString());
                 out = adapter.topic_details(id,request.getParameterValues("related")!=null ?request.getParameterValues("related"):null);
                 response.getWriter().println(out.toString());
                 break;

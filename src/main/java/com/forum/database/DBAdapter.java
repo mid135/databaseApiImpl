@@ -325,7 +325,7 @@ public class DBAdapter {
                     while (topic.next()) {
                     resp.put("date", topic.getString(5));
                     resp.put("forum", topic.getString(2));
-                    resp.put("id", topic.getString(1));
+                    resp.put("id", topic.getInt(1));
                     resp.put("isDeleted", (topic.getString(7).equals("true")));
                     resp.put("isClosed", (topic.getString(6).equals("true")));
                     resp.put("message", topic.getString(8));
@@ -345,7 +345,7 @@ public class DBAdapter {
         return out;
 
     }
-    public JSONObject topic_details(String topicId,String[] related) {
+    public JSONObject topic_details(Integer topicId,String[] related) {
         JSONObject out = new JSONObject();
         ArrayList args = new ArrayList();
         args.add(0,Integer.valueOf(topicId));
@@ -359,7 +359,7 @@ public class DBAdapter {
 
                 response.put("date", res.getDate(5)+" "+res.getTime(5));
 
-                response.put("id", res.getString(1));
+                response.put("id", res.getInt(1));
                 response.put("isDeleted", (res.getString(7).equals("true")));
                 response.put("isClosed", (res.getString(6).equals("true")));
                 response.put("message", res.getString(8));
@@ -372,10 +372,10 @@ public class DBAdapter {
                     CachedRowSetImpl userRow = doSelect("SELECT `id`,`name`,`user_name`,`about`,`email`,`isAnonymous` FROM `forum_db`.`User` as t1 WHERE t1.email=?;",args);
                     if (userRow!= null && userRow.next()) {
                         user.put("about", userRow.getString(4).equals("")? null:userRow.getString(4));
-                        user.put("email", userRow.getString(3).equals("")? null:userRow.getString(5));
+                        user.put("email", userRow.getString(5).equals("")? null:userRow.getString(5));
                         user.put("id", userRow.getString(1));
                         user.put("name", userRow.getString(2).equals("")? null:userRow.getString(2));
-                        user.put("username", userRow.getString(5).equals("")? null:userRow.getString(3));
+                        user.put("username", userRow.getString(3).equals("")? null:userRow.getString(3));
                         user.put("isAnonymous", userRow.getString(6).equals("true"));
                         response.put("user",user);
                     }
@@ -404,6 +404,7 @@ public class DBAdapter {
         } catch (SQLException r) {
             return null;
         }
+        System.out.println(out.toString());
         return out;
 
     }
