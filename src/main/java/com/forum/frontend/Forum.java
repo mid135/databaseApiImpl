@@ -35,12 +35,15 @@ public class Forum extends HttpServlet{
         try {
             switch (urlRequest[4]) {
                 case "details":
-                    //JSONObject input=adapter.parseJSON(request.getReader());
-
-
-                    output = adapter.forum_details(request.getParameter("forum").toString(), request.getParameter("related") != null ? request.getParameter("related").toString() : null);
-                    response.getWriter().println(output.toString());
+                    LinkedHashMap body = adapter.forum_details(request.getParameter("forum").toString(), request.getParameter("related") != null ? request.getParameterValues("related") : null);
                     response.setStatus(HttpServletResponse.SC_OK);
+                    if (body!=null) {
+                        output.put("code",0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code",1);
+                        output.put("response","error");
+                    }
                     break;
                 case "listPosts":
 
@@ -51,16 +54,15 @@ public class Forum extends HttpServlet{
                 case "listUser":
 
                     break;
-
             }
-            return;
+
         } catch (NullPointerException e) {
             //output.clear();
             output.put("code",2);
             output.put("response","invalid query");
-            response.getWriter().println(output.toString());
-            response.setStatus(HttpServletResponse.SC_OK);
         }
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.getWriter().println(output.toString());
     }
 
 
@@ -68,16 +70,22 @@ public class Forum extends HttpServlet{
                       HttpServletResponse response) throws ServletException,RuntimeException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
         adapter=DBAdapter.getDBAdapter();
+        JSONObject output = new JSONObject();
         if  (urlRequest[4].equals("create")) {
             response.setContentType("application/json;charset=utf-8");
             response.setCharacterEncoding("UTF-8");
             JSONObject input=adapter.parseJSON(request.getReader());
-            JSONObject output;
-            output = adapter.forum_create(input.get("name").toString(),input.get("short_name").toString(),input.get("user").toString());
-            response.getWriter().println(output.toString());
-            response.setStatus(HttpServletResponse.SC_OK);
-
+            LinkedHashMap body =adapter.forum_create(input.get("name").toString(),input.get("short_name").toString(),input.get("user").toString());
+            if (body!=null) {
+                output.put("code", 0);
+                output.put("response", body);
+            } else {
+                output.put("code",1);
+                output.put("response","error");
+            }
          }
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.getWriter().println(output.toString());
 
 
     }

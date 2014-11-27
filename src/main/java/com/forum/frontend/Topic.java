@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 
 /**
  * Created by mid on 09.11.14.
@@ -21,15 +22,21 @@ public class Topic extends HttpServlet {
                       HttpServletResponse response) throws ServletException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
         DBAdapter adapter = DBAdapter.getDBAdapter();
+        JSONObject output = new JSONObject();
         switch (urlRequest[4]) {
             case "details": {
                 response.setContentType("application/json;charset=utf-8");
                 response.setStatus(HttpServletResponse.SC_OK);
-                JSONObject out = new JSONObject();
                 Integer id = Integer.valueOf(request.getParameter("thread"));
-                System.out.println(request.toString());
-                out = adapter.topic_details(id,request.getParameterValues("related")!=null ?request.getParameterValues("related"):null);
-                response.getWriter().println(out.toString());
+                LinkedHashMap body = adapter.topic_details(id,request.getParameterValues("related")!=null ?request.getParameterValues("related"):null);
+                if (body!=null) {
+                    output.put("code",0);
+                    output.put("response", body);
+                } else {
+                    output.put("code",1);
+                    output.put("response","error");
+                }
+
                 break;
             }
             case "listPosts": {
@@ -40,9 +47,9 @@ public class Topic extends HttpServlet {
 
                 break;
             }
-
-
         }
+        response.getWriter().println(output.toString());
+        response.setStatus(HttpServletResponse.SC_OK);
     }
 
 
@@ -57,15 +64,23 @@ public class Topic extends HttpServlet {
                 try {
                     JSONObject input = adapter.parseJSON(request.getReader());
                     //TODO читаемый вызов функции
-                    output=adapter.topic_create(input.get("forum").toString(),
-                                         input.get("title").toString(),
-                                         Boolean.parseBoolean(input.get("isClosed").toString()),
-                                         Boolean.parseBoolean(input.get("isDeleted").toString()),
-                                         input.get("user").toString(),
-                                         input.get("date").toString(),
-                                         input.get("message").toString(),
-                                         input.get("slug").toString()
-                            );
+                    LinkedHashMap body=adapter.topic_create(input.get("forum").toString(),
+                            input.get("title").toString(),
+                            Boolean.parseBoolean(input.get("isClosed").toString()),
+                            Boolean.parseBoolean(input.get("isDeleted").toString()),
+                            input.get("user").toString(),
+                            input.get("date").toString(),
+                            input.get("message").toString(),
+                            input.get("slug").toString()
+                    );
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    if (body!=null) {
+                        output.put("code",0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code",1);
+                        output.put("response","error");
+                    }
 
                 } catch (NullPointerException e) {
                     output.clear();

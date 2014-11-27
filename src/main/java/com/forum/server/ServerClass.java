@@ -20,7 +20,7 @@ public class ServerClass {
         Forum forum = new Forum();
         User user = new User();
         Topic thread = new Topic();
-
+        Post post = new Post();
 
         Server server = new Server(8080);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
@@ -30,6 +30,8 @@ public class ServerClass {
         context.addServlet(new ServletHolder(forum),"/db/api/forum/*");
         context.addServlet(new ServletHolder(user),"/db/api/user/*");
         context.addServlet(new ServletHolder(thread),"/db/api/thread/*");
+        context.addServlet(new ServletHolder(post),"/db/api/post/*");
+
 
         server.start();
         server.join();

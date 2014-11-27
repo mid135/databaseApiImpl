@@ -11,25 +11,20 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 
 /**
- * Created by mid on 06.11.14.
+ * Created by mid on 26.11.14.
  */
-
-
-public class User  extends HttpServlet {
-
+public class Post extends HttpServlet {
     DBAdapter adapter;
 
     public void doGet(HttpServletRequest request,
                       HttpServletResponse response) throws ServletException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
         JSONObject output = new JSONObject();
-        DBAdapter adapter = DBAdapter.getDBAdapter();
+        adapter = DBAdapter.getDBAdapter();
         switch (urlRequest[4]) {
             case "details":
                 response.setContentType("application/json;charset=utf-8");
-
-
-                LinkedHashMap body = adapter.user_details(request.getParameter("user"));
+                LinkedHashMap body = adapter.post_details(Integer.valueOf(request.getParameter("post")),request.getParameterValues("related"));
 
                 if (body!=null) {
                     output.put("code",0);
@@ -63,17 +58,20 @@ public class User  extends HttpServlet {
         DBAdapter adapter = DBAdapter.getDBAdapter();
         JSONObject output = new JSONObject();
         if  (urlRequest[4].equals("create")) {
-
             try {
                 JSONObject input = adapter.parseJSON(request.getReader());
                 LinkedHashMap body;
-                Boolean isAnonymous = input.get("isAnonymous") != null ? (input.get("isAnonymous").toString() == "true" ? true : false) : false;
-                if (!isAnonymous) {
-                    body = adapter.user_create(input.get("username").toString(), input.get("about").toString(), isAnonymous, input.get("name").toString(), input.get("email").toString());
-                } else {
-                     body = adapter.user_create(null, null, isAnonymous, null, input.get("email").toString());
-                }
-
+                body = adapter.post_create(input.get("date").toString(),
+                        Integer.valueOf(input.get("thread").toString()),
+                        input.get("message").toString(),
+                        input.get("user").toString(),
+                        input.get("forum").toString(),
+                        Integer.valueOf(input.get("parent")!=null?input.get("parent").toString():"0"),
+                        input.get("isApproved").equals(true),
+                        input.get("isHighlighted").equals(true),
+                        input.get("isEdited").equals(true),
+                        input.get("isSpam").equals(true),
+                        input.get("isDeleted").equals(true));
                 if (body!=null) {
                     output.put("code",0);
                     output.put("response", body);
@@ -93,7 +91,3 @@ public class User  extends HttpServlet {
         }
     }
 }
-
-
-
-
