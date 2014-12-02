@@ -8,7 +8,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 /**
  * Created by mid on 09.11.14.
@@ -27,14 +30,21 @@ public class Topic extends HttpServlet {
             case "details": {
                 response.setContentType("application/json;charset=utf-8");
                 response.setStatus(HttpServletResponse.SC_OK);
+                //List param = Arrays.asList(request.getParameterValues("related"));
+
                 Integer id = Integer.valueOf(request.getParameter("thread"));
-                LinkedHashMap body = adapter.topic_details(id,request.getParameterValues("related")!=null ?request.getParameterValues("related"):null);
-                if (body!=null) {
-                    output.put("code",0);
-                    output.put("response", body);
+                if (id <= 0) {
+                    output.put("code", 1);
+                    output.put("response", "error");
                 } else {
-                    output.put("code",1);
-                    output.put("response","error");
+                    LinkedHashMap body = adapter.topic_details(id, request.getParameterValues("related") != null ? request.getParameterValues("related") : null);
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 3);
+                        output.put("response", "error");
+                    }
                 }
 
                 break;
@@ -73,7 +83,6 @@ public class Topic extends HttpServlet {
                             input.get("message").toString(),
                             input.get("slug").toString()
                     );
-                    response.setStatus(HttpServletResponse.SC_OK);
                     if (body!=null) {
                         output.put("code",0);
                         output.put("response", body);
@@ -87,31 +96,157 @@ public class Topic extends HttpServlet {
                     output.put("code", 2);
                     output.put("response", "invalid query");
                 }
+                break;
             }
             case "close": {
-
+                try {
+                    JSONObject input = adapter.parseJSON(request.getReader());
+                    LinkedHashMap body = adapter.topic_close(Integer.valueOf(input.get("thread").toString()));
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
+                break;
             }
             case "open": {
-
+                try {
+                    JSONObject input = adapter.parseJSON(request.getReader());
+                    LinkedHashMap body = adapter.topic_open(Integer.valueOf(input.get("thread").toString()));
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
+                break;
+            }
+            case "remove":{
+                try {
+                    JSONObject input = adapter.parseJSON(request.getReader());
+                    LinkedHashMap body = adapter.topic_remove(Integer.valueOf(input.get("thread").toString()));
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
+                break;
             }
             case "restore": {
-
+                try {
+                    JSONObject input = adapter.parseJSON(request.getReader());
+                    LinkedHashMap body = adapter.topic_restore(Integer.valueOf(input.get("thread").toString()));
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
+                break;
             }
             case "subscribe": {
-
-            }
-            case "update": {
-
-            }
-            case "vote": {
-
-            }
-            case "remove": {
-
+                try {
+                    JSONObject input = adapter.parseJSON(request.getReader());
+                    LinkedHashMap body = adapter.topic_subscribe(input.get("user").toString(),Integer.valueOf(input.get("thread").toString()));
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
+                break;
             }
             case "unsubscribe": {
-
+                try {
+                    JSONObject input = adapter.parseJSON(request.getReader());
+                    LinkedHashMap body = adapter.topic_unsubscribe(input.get("user").toString(),Integer.valueOf(input.get("thread").toString()));
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
+                break;
             }
+            case "update": {
+                try {
+                    JSONObject input = adapter.parseJSON(request.getReader());
+                    LinkedHashMap body = adapter.topic_update(Integer.valueOf(input.get("thread").toString()),
+                            input.get("message").toString(),
+                            input.get("slug").toString()
+                    );
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
+                break;
+            }
+            case "vote": {
+                try {
+                    JSONObject input = adapter.parseJSON(request.getReader());
+                    LinkedHashMap body = adapter.topic_vote(Integer.valueOf(input.get("vote").toString()),Integer.valueOf(input.get("thread").toString()));
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
+            }
+
+
+
         }
         response.getWriter().println(output.toString());
         response.setStatus(HttpServletResponse.SC_OK);
