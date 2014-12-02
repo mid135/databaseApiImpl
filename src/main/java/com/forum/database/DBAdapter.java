@@ -360,9 +360,10 @@ public class DBAdapter {
         }
         args.clear();
         ArrayList result = new ArrayList();
-        LinkedHashMap elem = new LinkedHashMap();
+
         try {
             while (res.next()) {
+                LinkedHashMap elem = new LinkedHashMap();
                 elem.put("date", res.getDate(7)+" "+res.getTime(7));
                 elem.put("id", res.getInt(1));
                 elem.put("isApproved", res.getString(2).equals("true"));
@@ -370,7 +371,6 @@ public class DBAdapter {
                 elem.put("isEdited", res.getString(4).equals("true"));
                 elem.put("isSpam", res.getString(5).equals("true"));
                 elem.put("isDeleted", res.getString(6).equals("true"));
-                elem.put("creation_date", res.getString(7));
                 elem.put("message", res.getString(11));
                 elem.put("parent",res.getInt(12)==0?null:res.getInt(12));
                 elem.put("points",res.getInt(13));
