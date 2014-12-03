@@ -351,9 +351,9 @@ public class DBAdapter {
         args.add(limit);
         CachedRowSetImpl res;
         if (order.equals("asc")) {
-            res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.user_email=? and t1.`creation_date`>? and t1.`isDeleted`=False ORDER BY t1.`creation_date` ASC LIMIT ?;", args);
+            res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.user_email=? and t1.`creation_date`>?  ORDER BY t1.`creation_date` ASC LIMIT ?;", args);
         } else {
-            res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.user_email=? and t1.`creation_date`>? and t1.`isDeleted`=False ORDER BY t1.`creation_date` DESC LIMIT ?;",args);
+            res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.user_email=? and t1.`creation_date`>?  ORDER BY t1.`creation_date` DESC LIMIT ?;",args);
         }
         args.clear();
         ArrayList result = new ArrayList();
@@ -504,8 +504,9 @@ public class DBAdapter {
         ArrayList args = new ArrayList();
         args.add(0,topicId);
         Integer id = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`isDeleted`=True WHERE t1.`id`=?;",args);
+        Integer id2 = doSQL("UPDATE `forum_db`.`Post` as t1 SET t1.`isDeleted`=True WHERE t1.`thread`=?",args);
         LinkedHashMap resp = new LinkedHashMap();
-        if (id>0) {
+        if (id>=0 & id2>=0) {
             resp.put("thread", id);
         }
         return resp;
@@ -514,8 +515,9 @@ public class DBAdapter {
         ArrayList args = new ArrayList();
         args.add(0,topicId);
         Integer id = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`isDeleted`=False WHERE t1.`id`=?;",args);
+        Integer id2 = doSQL("UPDATE `forum_db`.`Post` as t1 SET t1.`isDeleted`=False WHERE t1.`thread`=?",args);
         LinkedHashMap resp = new LinkedHashMap();
-        if (id>0) {
+        if (id>=0&id2>=0) {
             resp.put("thread", id);
         }
         return resp;
@@ -597,37 +599,44 @@ public class DBAdapter {
         if (forum != null) {
             args.set(0, forum);
             if (order.equals("asc")) {
-                res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`ASC LIMIT ? ", args);
+                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` FROM `forum_db`.`Thread` as t1 WHERE t1.`forum`=? AND t1.`date`>?  ORDER BY t1.`id`ASC LIMIT ? ", args);
             } else {
-                res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` FROM `forum_db`.`Thread` as t1 WHERE t1.`forum`=? AND t1.`date`>?  ORDER BY t1.`id`DESC LIMIT ? ", args);
             }
         } else {
             args.set(0, user);
             if (order.equals("asc")) {
-                res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`user_email`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False  ORDER BY t1.`id`ASC LIMIT ? ", args);
+                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` FROM `forum_db`.`Thread` as t1 WHERE t1.`user`=? AND t1.`date`>?  ORDER BY t1.`id`ASC LIMIT ? ", args);
             } else {
-                res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`user_email`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` FROM `forum_db`.`Thread` as t1 WHERE t1.`user`=? AND t1.`date`>?  ORDER BY t1.`id`DESC LIMIT ? ", args);
             }
         }
 
         try {
             while (res.next()) {
                 LinkedHashMap elem = new LinkedHashMap();
-                elem.put("date", res.getDate(7)+" "+res.getTime(7));
+                elem.put("date", res.getDate(5)+" "+res.getTime(5));
                 elem.put("id", res.getInt(1));
-                elem.put("isApproved", res.getString(2).equals("true"));
-                elem.put("isHighlighted", res.getString(3).equals("true"));
-                elem.put("isEdited", res.getString(4).equals("true"));
-                elem.put("isSpam", res.getString(5).equals("true"));
-                elem.put("isDeleted", res.getString(6).equals("true"));
-                elem.put("message", res.getString(11));
-                elem.put("parent",res.getInt(12)==0?null:res.getInt(12));
-                elem.put("points",res.getInt(13));
-                elem.put("likes",res.getInt(14));
-                elem.put("dislikes",res.getInt(15));
-                elem.put("thread", res.getInt(8));
-                elem.put("user",res.getString(9));
-                elem.put("forum", res.getString(10));
+                {
+                    args.clear();
+                    args.add(0, res.getInt(1));
+                    CachedRowSetImpl count = doSelect("SELECT count(t1.`id`) as posts FROM `forum_db`.`Post` as t1 WHERE t1.`isDeleted`=0 and t1.`thread`=?;",args);
+                    if (count.next()) {
+                        elem.put("posts",count.getInt(1));
+                    } else {
+                        elem.put("posts",0);
+                    }
+                }
+                elem.put("isDeleted", (res.getString(7).equals("true")));
+                elem.put("isClosed", (res.getString(6).equals("true")));
+                elem.put("message", res.getString(8));
+                elem.put("slug", res.getString(9));
+                elem.put("title", res.getString(3));
+                elem.put("likes", res.getInt(10));
+                elem.put("points", res.getInt(11));
+                elem.put("dislikes", res.getInt(12));
+                elem.put("user", res.getString("user"));
+                elem.put("forum", res.getString("forum"));
                 response.add(elem);
             }
         } catch (SQLException e){
@@ -646,9 +655,9 @@ public class DBAdapter {
          CachedRowSetImpl res;
          args.set(0, thread);
          if (order.equals("asc")) {
-             res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`ASC LIMIT ? ", args);
+             res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? ORDER BY t1.`id`ASC LIMIT ? ", args);
          } else {
-             res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+             res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? ORDER BY t1.`id`DESC LIMIT ? ", args);
          }
          try {
              while (res.next()) {
@@ -836,16 +845,16 @@ public class DBAdapter {
             if (forum != null) {
                 args.set(0, forum);
                 if (order.equals("asc")) {
-                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`ASC LIMIT ? ", args);
+                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>?  ORDER BY t1.`id`ASC LIMIT ? ", args);
                 } else {
-                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>?  ORDER BY t1.`id`DESC LIMIT ? ", args);
                 }
             } else {
                 args.set(0, thread);
                 if (order.equals("asc")) {
-                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False  ORDER BY t1.`id`ASC LIMIT ? ", args);
+                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? ORDER BY t1.`id`ASC LIMIT ? ", args);
                 } else {
-                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>?  ORDER BY t1.`id`DESC LIMIT ? ", args);
                 }
             }
 
