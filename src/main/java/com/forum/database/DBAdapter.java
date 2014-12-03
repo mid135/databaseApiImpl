@@ -29,6 +29,17 @@ public class DBAdapter {
     private static final String PASSWORD = "1234QWer";
 
     private static DBAdapter instance;
+    Connection conection;
+    public DBAdapter() {
+        try {
+            Driver driver = new FabricMySQLDriver();
+            DriverManager.registerDriver(driver);
+            this.conection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        } catch (SQLException e) {
+            System.err.println("Не удалось загрузить драйвер !!!");
+        }
+
+    }
 
     public static synchronized DBAdapter getDBAdapter() {
        if (instance == null) {
@@ -60,14 +71,8 @@ public class DBAdapter {
 
     private CachedRowSetImpl doSelect(String query,ArrayList args) {
 
-        try {
-            Driver driver = new FabricMySQLDriver();
-            DriverManager.registerDriver(driver);
 
-        } catch (SQLException e) {
-            System.err.println("Не удалось загрузить драйвер !!!");
-        }
-        try(Connection conection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        try(
             PreparedStatement statement = conection.prepareStatement(query,Statement.RETURN_GENERATED_KEYS)) {
             CachedRowSetImpl set = new CachedRowSetImpl();
 
@@ -76,7 +81,7 @@ public class DBAdapter {
             }
             ResultSet res = statement.executeQuery();
             set.populate(res);
-            conection.close();
+
             return set;
         } catch (SQLException e) {
             System.err.println("Ошибка");
@@ -86,16 +91,8 @@ public class DBAdapter {
     }
 
     private int doSQL(String query,ArrayList args) {
-        try {
-            Driver driver = new FabricMySQLDriver();
-            DriverManager.registerDriver(driver);
 
-        } catch (SQLException e) {
-            System.err.println("Не удалось загрузить драйвер !!!");
-            return -1;
-        }
-
-        try(Connection conection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        try(
             PreparedStatement statement = conection.prepareStatement(query,Statement.RETURN_GENERATED_KEYS)) {
 
             for (int i = 0; i < args.size(); ++i) {
@@ -108,7 +105,7 @@ public class DBAdapter {
             if (res.next()) {//предполагается, что update на одну строку
                 id = res.getInt(1);
             }
-            conection.close();
+
             return  id;
         } catch (SQLException e) {
             System.err.println("Ошибка базы данных"+query+args.toString());
@@ -572,6 +569,7 @@ public class DBAdapter {
         return resp;
     }
 
+
     public LinkedHashMap topic_vote(Integer vote, Integer topicId) {
         ArrayList args = new ArrayList();
         args.add(0,topicId);
@@ -587,6 +585,98 @@ public class DBAdapter {
         }
         return resp;
     }
+
+    public ArrayList topic_list(String forum,String user,String since,Integer limit,String order) {
+        ArrayList args = new ArrayList();
+        ArrayList response = new ArrayList();
+        args.add(0,null);
+        args.add(1,since);
+        args.add(2,limit);
+        CachedRowSetImpl res;
+
+        if (forum != null) {
+            args.set(0, forum);
+            if (order.equals("asc")) {
+                res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`ASC LIMIT ? ", args);
+            } else {
+                res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+            }
+        } else {
+            args.set(0, user);
+            if (order.equals("asc")) {
+                res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`user_email`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False  ORDER BY t1.`id`ASC LIMIT ? ", args);
+            } else {
+                res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`user_email`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+            }
+        }
+
+        try {
+            while (res.next()) {
+                LinkedHashMap elem = new LinkedHashMap();
+                elem.put("date", res.getDate(7)+" "+res.getTime(7));
+                elem.put("id", res.getInt(1));
+                elem.put("isApproved", res.getString(2).equals("true"));
+                elem.put("isHighlighted", res.getString(3).equals("true"));
+                elem.put("isEdited", res.getString(4).equals("true"));
+                elem.put("isSpam", res.getString(5).equals("true"));
+                elem.put("isDeleted", res.getString(6).equals("true"));
+                elem.put("message", res.getString(11));
+                elem.put("parent",res.getInt(12)==0?null:res.getInt(12));
+                elem.put("points",res.getInt(13));
+                elem.put("likes",res.getInt(14));
+                elem.put("dislikes",res.getInt(15));
+                elem.put("thread", res.getInt(8));
+                elem.put("user",res.getString(9));
+                elem.put("forum", res.getString(10));
+                response.add(elem);
+            }
+        } catch (SQLException e){
+            return null;
+        }
+
+        return response;
+    }
+
+     public ArrayList topic_listPosts(Integer thread,String since,Integer limit,String order,String sort) {
+         ArrayList args = new ArrayList();
+         ArrayList response = new ArrayList();
+         args.add(0,null);
+         args.add(1,since);
+         args.add(2,limit);
+         CachedRowSetImpl res;
+         args.set(0, thread);
+         if (order.equals("asc")) {
+             res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`ASC LIMIT ? ", args);
+         } else {
+             res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+         }
+         try {
+             while (res.next()) {
+                 LinkedHashMap elem = new LinkedHashMap();
+                 elem.put("date", res.getDate(7)+" "+res.getTime(7));
+                 elem.put("id", res.getInt(1));
+                 elem.put("isApproved", res.getString(2).equals("true"));
+                 elem.put("isHighlighted", res.getString(3).equals("true"));
+                 elem.put("isEdited", res.getString(4).equals("true"));
+                 elem.put("isSpam", res.getString(5).equals("true"));
+                 elem.put("isDeleted", res.getString(6).equals("true"));
+                 elem.put("message", res.getString(11));
+                 elem.put("parent",res.getInt(12)==0?null:res.getInt(12));
+                 elem.put("points",res.getInt(13));
+                 elem.put("likes",res.getInt(14));
+                 elem.put("dislikes",res.getInt(15));
+                 elem.put("thread", res.getInt(8));
+                 elem.put("user",res.getString(9));
+                 elem.put("forum", res.getString(10));
+                 response.add(elem);
+             }
+         } catch (SQLException e){
+             return null;
+         }
+
+         return response;
+
+     }
 
     public LinkedHashMap post_create(String date,Integer threadId, String message,String user,String forum,
                                   Integer parent, Boolean isApproved,Boolean isHighlighted,Boolean isEdited,
@@ -733,6 +823,57 @@ public class DBAdapter {
             resp = post_details(post,null);
         }
         return resp;
+    }
+
+    public ArrayList post_list(String forum,Integer thread,String since,Integer limit,String order) {
+        ArrayList args = new ArrayList();
+        ArrayList response = new ArrayList();
+        args.add(0,null);
+        args.add(1,since);
+        args.add(2,limit);
+        CachedRowSetImpl res;
+
+            if (forum != null) {
+                args.set(0, forum);
+                if (order.equals("asc")) {
+                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`ASC LIMIT ? ", args);
+                } else {
+                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`forum`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+                }
+            } else {
+                args.set(0, thread);
+                if (order.equals("asc")) {
+                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False  ORDER BY t1.`id`ASC LIMIT ? ", args);
+                } else {
+                    res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.`thread`=? AND t1.`creation_date`>? AND t1.`isDeleted`=False ORDER BY t1.`id`DESC LIMIT ? ", args);
+                }
+            }
+
+        try {
+            while (res.next()) {
+                LinkedHashMap elem = new LinkedHashMap();
+                elem.put("date", res.getDate(7)+" "+res.getTime(7));
+                elem.put("id", res.getInt(1));
+                elem.put("isApproved", res.getString(2).equals("true"));
+                elem.put("isHighlighted", res.getString(3).equals("true"));
+                elem.put("isEdited", res.getString(4).equals("true"));
+                elem.put("isSpam", res.getString(5).equals("true"));
+                elem.put("isDeleted", res.getString(6).equals("true"));
+                elem.put("message", res.getString(11));
+                elem.put("parent",res.getInt(12)==0?null:res.getInt(12));
+                elem.put("points",res.getInt(13));
+                elem.put("likes",res.getInt(14));
+                elem.put("dislikes",res.getInt(15));
+                elem.put("thread", res.getInt(8));
+                elem.put("user",res.getString(9));
+                elem.put("forum", res.getString(10));
+                response.add(elem);
+            }
+        } catch (SQLException e){
+            return null;
+        }
+
+        return response;
     }
 
 }

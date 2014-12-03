@@ -50,11 +50,48 @@ public class Topic extends HttpServlet {
                 break;
             }
             case "listPosts": {
-
+                try {
+                    ArrayList body = adapter.topic_listPosts(
+                            Integer.valueOf(request.getParameter("thread").toString()),
+                            request.getParameter("since")!=null?request.getParameter("since").toString():"1970-01-01",
+                            request.getParameter("limit")!=null?Integer.valueOf(request.getParameter("limit").toString()):10000,
+                            request.getParameter("order")!=null?request.getParameter("order").toString():"desc",
+                            request.getParameter("sort")!=null?request.getParameter("sort").toString():"flat"
+                    );
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
                 break;
             }
             case "list": {
-
+                try {
+                    ArrayList body = adapter.topic_list(request.getParameter("forum")!=null?request.getParameter("forum").toString():null,
+                            request.getParameter("user")!=null?request.getParameter("user").toString():null,
+                            request.getParameter("since")!=null?request.getParameter("since").toString():"1970-01-01",
+                            request.getParameter("limit")!=null?Integer.valueOf(request.getParameter("limit").toString()):10000,
+                            request.getParameter("order")!=null?request.getParameter("order").toString():"desc"
+                    );
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
                 break;
             }
         }

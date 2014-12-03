@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 /**
@@ -49,6 +50,28 @@ public class Post extends HttpServlet {
             case "listUser":
 
                 break;
+            case "list": {
+                try {
+                    ArrayList body = adapter.post_list(request.getParameter("forum")!=null?request.getParameter("forum").toString():null,
+                            request.getParameter("thread")!=null?Integer.valueOf(request.getParameter("thread").toString()):null,
+                            request.getParameter("since")!=null?request.getParameter("since").toString():"1970-01-01",
+                            request.getParameter("limit")!=null?Integer.valueOf(request.getParameter("limit").toString()):10000,
+                            request.getParameter("order")!=null?request.getParameter("order").toString():"desc"
+                    );
+                    if (body != null) {
+                        output.put("code", 0);
+                        output.put("response", body);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
+                } catch (NullPointerException e) {
+                    output.clear();
+                    output.put("code", 2);
+                    output.put("response", "invalid query");
+                }
+                break;
+            }
 
         }
         response.getWriter().println(output.toString());
@@ -166,7 +189,9 @@ public class Post extends HttpServlet {
                     output.put("code", 2);
                     output.put("response", "invalid query");
                 }
+                break;
             }
+
         }
         response.getWriter().println(output.toString());
         response.setStatus(HttpServletResponse.SC_OK);
