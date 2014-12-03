@@ -191,9 +191,10 @@ public class DBAdapter {
         CachedRowSetImpl users;
         try {
             if (order.equals("asc")) {
-                users=doSelect("SELECT t2.`email` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=? GROUP BY t2.id ORDER BY t2.name ASC LIMIT ?", args);
+                //TODO WTF    -1 IN ID???????
+                users=doSelect("SELECT t2.`email`,t2.`name` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=?-1 GROUP BY t2.id ORDER BY t2.name ASC LIMIT ?", args);
             } else {
-                users = doSelect("SELECT t2.`email` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=? GROUP BY t2.id ORDER BY t2.name DESC LIMIT ?", args);
+                users = doSelect("SELECT t2.`email`,t2.`name` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=?-1 GROUP BY t2.id ORDER BY t2.name DESC LIMIT ?", args);
             }
             args.clear();
             while (users.next()) {
@@ -241,6 +242,90 @@ public class DBAdapter {
                 }
             }
         } catch(SQLException e) {
+            return null;
+        }
+        return result;
+    }
+
+    public ArrayList forum_listTopics(String forum_name,String since, Integer limit,String order,String[] related) {
+        ArrayList result = new ArrayList();
+
+        ArrayList args = new ArrayList();
+        args.add(forum_name);
+        args.add(since);
+        args.add(limit);
+        CachedRowSetImpl threads;
+
+        try {
+            if (order.equals("asc")) {
+                threads=doSelect("SELECT t2.id FROM `forum_db`.`Forum` as t1 LEFT JOIN `forum_db`.`Thread` as t2 ON t2.forum=t1.`short_name` WHERE t1.`short_name`=? AND t2.`date`>? ORDER BY t2.`date` ASC LIMIT ?", args);
+            } else {
+                threads = doSelect("SELECT t2.id FROM `forum_db`.`Forum` as t1 LEFT JOIN `forum_db`.`Thread` as t2 ON t2.forum=t1.`short_name` WHERE t1.`short_name`=? AND t2.`date`>? ORDER BY t2.`date` DESC LIMIT ?", args);
+            }
+            args.clear();
+            while (threads.next()) {
+                result.add(topic_details(threads.getInt(1),related));
+            }
+
+        } catch(SQLException e) {
+            return null;
+        }
+        return result;
+
+    }
+
+    public ArrayList forum_listPosts(String forum_name,String since, Integer limit,String order,String[] related) {
+        ArrayList args = new ArrayList();
+        args.add(forum_name);
+        args.add(since);
+        args.add(limit);
+        CachedRowSetImpl res;
+        if (order.equals("asc")) {
+            res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.forum=? and t1.`creation_date`>?  ORDER BY t1.`creation_date` ASC LIMIT ?;", args);
+        } else {
+            res = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`,`likes`-`dislikes` as points,`likes`,`dislikes` FROM `forum_db`.`Post` as t1 WHERE t1.forum=? and t1.`creation_date`>?  ORDER BY t1.`creation_date` DESC LIMIT ?;", args);
+        }
+        args.clear();
+        ArrayList result = new ArrayList();
+
+        try {
+            while (res.next()) {
+                LinkedHashMap elem = new LinkedHashMap();
+                elem.put("date", res.getDate(7) + " " + res.getTime(7));
+                elem.put("id", res.getInt(1));
+                elem.put("isApproved", res.getString(2).equals("true"));
+                elem.put("isHighlighted", res.getString(3).equals("true"));
+                elem.put("isEdited", res.getString(4).equals("true"));
+                elem.put("isSpam", res.getString(5).equals("true"));
+                elem.put("isDeleted", res.getString(6).equals("true"));
+                elem.put("message", res.getString(11));
+                elem.put("parent", res.getInt(12) == 0 ? null : res.getInt(12));
+                elem.put("points", res.getInt(13));
+                elem.put("likes", res.getInt(14));
+                elem.put("dislikes", res.getInt(15));
+                if (related != null && Arrays.asList(related).contains("thread")) {
+                    elem.put("thread", this.topic_details(res.getInt(8), null));
+                } else {
+                    elem.put("thread", res.getInt(8));
+                }
+                if (related != null && Arrays.asList(related).contains("user")) {
+                    args.clear();
+                    args.add(res.getString(9));
+                    elem.put("user", this.user_details(args));
+                } else {
+                    elem.put("user", res.getString(9));
+                }
+                if (related != null && Arrays.asList(related).contains("forum")) {
+                    elem.put("forum", this.forum_details(res.getString(10), null));
+                } else {
+                    elem.put("forum", res.getString(10));
+                }
+                ;
+                result.add(elem);
+
+            }
+        } catch (SQLException r) {
+            System.out.println("error");
             return null;
         }
         return result;

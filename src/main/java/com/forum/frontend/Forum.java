@@ -32,10 +32,12 @@ public class Forum extends HttpServlet{
         response.setContentType("application/json;charset=utf-8");
         response.setCharacterEncoding("UTF-8");
         JSONObject output  = new JSONObject();
-        try {
-            switch (urlRequest[4]) {
+        adapter = DBAdapter.getDBAdapter();
+        LinkedHashMap body;
+        ArrayList body_arr;
+        switch (urlRequest[4]) {
                 case "details":
-                    LinkedHashMap body = adapter.forum_details(request.getParameter("forum").toString(), request.getParameter("related") != null ? request.getParameterValues("related") : null);
+                    body = adapter.forum_details(request.getParameter("forum").toString(), request.getParameter("related") != null ? request.getParameterValues("related") : null);
                     response.setStatus(HttpServletResponse.SC_OK);
                     if (body!=null) {
                         output.put("code",0);
@@ -46,38 +48,55 @@ public class Forum extends HttpServlet{
                     }
                     break;
                 case "listUsers":
-                    try {
-                        ArrayList bodyIsReady = adapter.forum_listUsers(request.getParameter("forum").toString(),
-                                request.getParameter("since_id")!=null?Integer.valueOf(request.getParameter("since_id").toString()):1,
-                                request.getParameter("limit")!=null?Integer.valueOf(request.getParameter("limit").toString()):10000,
-                                request.getParameter("order")!=null?request.getParameter("order").toString():"desc"
+                    body_arr = adapter.forum_listUsers(request.getParameter("forum").toString(),
+                                request.getParameter("since_id") != null ? Integer.valueOf(request.getParameter("since_id").toString()) : 0,
+                                request.getParameter("limit") != null ? Integer.valueOf(request.getParameter("limit").toString()) : 10000,
+                                request.getParameter("order") != null ? request.getParameter("order").toString() : "desc"
                         );
-                        if (bodyIsReady != null) {
+                        if (body_arr != null) {
                             output.put("code", 0);
-                            output.put("response", bodyIsReady);
+                            output.put("response", body_arr);
                         } else {
                             output.put("code", 1);
                             output.put("response", "error");
                         }
-                    } catch (NullPointerException e) {
-                        output.clear();
-                        output.put("code", 2);
-                        output.put("response", "invalid query");
-                    }
+
                     break;
                 case "listThreads":
 
+                        body_arr = adapter.forum_listTopics(request.getParameter("forum").toString(),
+                                request.getParameter("since") != null ? request.getParameter("since").toString() : "1970-01-01",
+                                request.getParameter("limit") != null ? Integer.valueOf(request.getParameter("limit").toString()) : 10000,
+                                request.getParameter("order") != null ? request.getParameter("order").toString() : "desc",
+                                request.getParameter("related") != null ? request.getParameterValues("related") : null
+                        );
+                        if (body_arr != null) {
+                            output.put("code", 0);
+                            output.put("response", body_arr);
+                        } else {
+                            output.put("code", 1);
+                            output.put("response", "error");
+                        }
                     break;
                 case "listPosts":
+                    body_arr = adapter.forum_listPosts(request.getParameter("forum").toString(),
+                            request.getParameter("since") != null ? request.getParameter("since").toString() : "1970-01-01",
+                            request.getParameter("limit") != null ? Integer.valueOf(request.getParameter("limit").toString()) : 10000,
+                            request.getParameter("order") != null ? request.getParameter("order").toString() : "desc",
+                            request.getParameter("related") != null ? request.getParameterValues("related") : null
+                    );
+                    if (body_arr != null) {
+                        output.put("code", 0);
+                        output.put("response", body_arr);
+                    } else {
+                        output.put("code", 1);
+                        output.put("response", "error");
+                    }
 
                     break;
             }
 
-        } catch (NullPointerException e) {
-            //output.clear();
-            output.put("code",2);
-            output.put("response","invalid query");
-        }
+
         response.setStatus(HttpServletResponse.SC_OK);
         response.getWriter().println(output.toString());
     }
