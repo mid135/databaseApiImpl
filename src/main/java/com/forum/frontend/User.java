@@ -30,6 +30,7 @@ public class User  extends HttpServlet {
             case "details": {
                 ArrayList args = new ArrayList();
                 args.add(request.getParameter("user"));
+                //System.out.println("user");
                 LinkedHashMap body = adapter.user_details(args);
 
                 if (body != null) {

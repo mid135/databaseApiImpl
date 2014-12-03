@@ -33,6 +33,15 @@ public class Topic extends HttpServlet {
                 //List param = Arrays.asList(request.getParameterValues("related"));
 
                 Integer id = Integer.valueOf(request.getParameter("thread"));
+                //TODO нормальная проверка related - с помощью отдельной функции, в которую буем передавать то, что может быть в related
+                if (request.getParameterValues("related") != null) {
+                    if (Arrays.asList(request.getParameterValues("related")).contains("thread")) {
+                        output.put("code", 3);
+                        output.put("response", "error");
+                        break;
+                    }
+                }
+
                 if (id <= 0) {
                     output.put("code", 1);
                     output.put("response", "error");

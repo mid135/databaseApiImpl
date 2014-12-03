@@ -139,21 +139,18 @@ public class DBAdapter {
         args.add(2,user);
         int resId;
         resId = doSQL("INSERT INTO `forum_db`.Forum (`name`,`short_name`,`user_mail`) VALUES (?,?,?);", args);
-        args.clear();
         LinkedHashMap response = new LinkedHashMap();
         args.add(0,resId);
-        CachedRowSetImpl forum = doSelect("SELECT `id`,`name`,`short_name`,`user_mail` FROM `forum_db`.`Forum` as t1 WHERE t1.`id`=?;",args);//user info
-        try {
-            while(forum.next()) {
-                response.put("id", forum.getString("id"));
-                response.put("name",forum.getString("name"));
-                response.put("short_name",forum.getString("short_name"));
-                response.put("user",forum.getString("user_mail"));
+        if(resId>0) {
+                response.put("id", resId);
+                response.put("name",args.get(0));
+                response.put("short_name",args.get(1));
+                response.put("user",args.get(2));
 
-            }
-        } catch (SQLException e) {
-            //System.out.println(forum.toString());
+        } else {
+            return null;
         }
+
         return response;
     }
     public LinkedHashMap forum_details(String forumName, String[] relatedUser) {
@@ -163,7 +160,7 @@ public class DBAdapter {
         CachedRowSetImpl res =  doSelect("SELECT `id`,`name`,`short_name`,`user_mail` FROM `forum_db`.`Forum` as t1 WHERE t1.`short_name`=?; ",args);
         try {
             while (res.next()) {
-                response.put("id", res.getString("id"));
+                response.put("id", res.getInt("id"));
                 response.put("name", res.getString("name"));
                 response.put("short_name", res.getString("short_name"));
                 if (relatedUser!=null && Arrays.asList(relatedUser).contains("user")) {
@@ -208,13 +205,13 @@ public class DBAdapter {
                     if (user.getString(6).equals("false")) {
                         resp.put("about", user.getString(4).equals("") ? null : user.getString(4));
                         resp.put("email", user.getString(5));
-                        resp.put("id", user.getString(1));
+                        resp.put("id", user.getInt(1));
                         resp.put("isAnonymous", false);
                         resp.put("name", user.getString(2));
                         resp.put("username", user.getString(3).equals("") ? null : user.getString(3));
                     } else {
                         resp.put("email", user.getString(5));
-                        resp.put("id", user.getString(1));
+                        resp.put("id", user.getInt(1));
                         resp.put("about", null);
                         resp.put("name", null);
                         resp.put("username", null);
@@ -339,24 +336,15 @@ public class DBAdapter {
         args.add(2,about==null?"":about);
         args.add(3,username==null?"":username);
         args.add(4,isAnomymous==false? 0: 1);
-        int res = doSQL("INSERT INTO `forum_db`.`User`(`email`,`name`,`about`,`user_name`,`isAnonymous`) VALUES(?,?,?,?,?);",args);
+        Integer res = doSQL("INSERT INTO `forum_db`.`User`(`email`,`name`,`about`,`user_name`,`isAnonymous`) VALUES(?,?,?,?,?);",args);
         if (res>0) {
-            args.clear();
             args.add(0,res);
-            CachedRowSetImpl user = doSelect("SELECT `id`,`name`,`user_name`,`about`,`email`,`isAnonymous` FROM `forum_db`.`User` as t1 WHERE t1.id=?;",args);
-            try {
-                while (user.next()) {
-                    resp.put("about", user.getString(4));
-                    resp.put("email", user.getString(5));
-                    resp.put("id", user.getString(1));
-                    resp.put("isAnonymous", (user.getString(6).equals("1")));
-                    resp.put("name", user.getString(2));
-                    resp.put("username", user.getString(3));
-                }
-            } catch (SQLException e) {
-                System.out.println("error");
-                return null;
-            }
+            resp.put("about", about);
+            resp.put("email", email);
+            resp.put("id", res);
+            resp.put("isAnonymous", isAnomymous);
+            resp.put("name", name);
+            resp.put("username", username);
         } else {
             return null;
         }
@@ -374,13 +362,13 @@ public class DBAdapter {
                     if (user.getString(6).equals("false")) {
                         resp.put("about", user.getString(4).equals("") ? null : user.getString(4));
                         resp.put("email", user.getString(5));
-                        resp.put("id", user.getString(1));
+                        resp.put("id", user.getInt(1));
                         resp.put("isAnonymous", false);
                         resp.put("name", user.getString(2));
                         resp.put("username", user.getString(3).equals("") ? null : user.getString(3));
                     } else {
                         resp.put("email", user.getString(5));
-                        resp.put("id", user.getString(1));
+                        resp.put("id", user.getInt(1));
                         resp.put("about", null);
                         resp.put("name", null);
                         resp.put("username", null);
@@ -564,24 +552,16 @@ public class DBAdapter {
         args.add(7,slug);
         int resId = doSQL("INSERT INTO `forum_db`.`Thread` (`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`) VALUES (?,?,?,?,?,?,?,?);",args);
         if (resId > 0) {
-            args.clear();
-            args.add(0,resId);
-            CachedRowSetImpl topic = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug` FROM `forum_db`.`Thread` as t1 WHERE t1.id=?;",args);
-            try {
-                    while (topic.next()) {
-                    resp.put("date", topic.getString(5));
-                    resp.put("forum", topic.getString(2));
-                    resp.put("id", topic.getInt(1));
-                    resp.put("isDeleted", (topic.getString(7).equals("true")));
-                    resp.put("isClosed", (topic.getString(6).equals("true")));
-                    resp.put("message", topic.getString(8));
-                    resp.put("slug", topic.getString(9));
-                    resp.put("title", topic.getString(3));
-                    resp.put("user", topic.getString(4));
-                }
-            } catch (SQLException e) {
-                System.out.println("error");
-            }
+                    resp.put("date", args.get(3));
+                    resp.put("forum", args.get(0));
+                    resp.put("id", resId);
+                    resp.put("isDeleted", (args.get(5).equals("true")));
+                    resp.put("isClosed", (args.get(4).equals("true")));
+                    resp.put("message", args.get(6));
+                    resp.put("slug", args.get(7));
+                    resp.put("title", args.get(1));
+                    resp.put("user", args.get(2));
+
         } else {
             return null;
         }
@@ -857,28 +837,24 @@ public class DBAdapter {
         int resId = doSQL("INSERT INTO `forum_db`.`Post` (`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`) VALUES (?,?,?,?,?,?,?,?,?,?,?);",args);
         if (resId > 0) {
 
-            args.clear();
+
             args.add(0,resId);
-            CachedRowSetImpl post = doSelect("SELECT `id`,`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent` FROM `forum_db`.`Post` as t1 WHERE t1.`id`=? ",args);
-            try {
-                while (post.next()) {
-                    resp.put("id", post.getInt(1));
-                    resp.put("isApproved", post.getString(2).equals("true"));
-                    resp.put("isHighlighted", post.getString(3).equals("true"));
-                    resp.put("isEdited", post.getString(4).equals("true"));
-                    resp.put("isSpam", post.getString(5).equals("true"));
-                    resp.put("idDeleted", post.getString(6).equals("true"));
-                    resp.put("creation_date", post.getString(7));
-                    resp.put("thread", post.getInt(8));
-                    resp.put("user_email", post.getString(9));
-                    resp.put("forum", post.getString(10));
-                    resp.put("message", post.getString(11));
-                    resp.put("parent",post.getInt(12));
 
-                }
-            } catch (SQLException e) {
+                    resp.put("id", resId);
+                    resp.put("isApproved", args.get(0));
+                    resp.put("isHighlighted", args.get(1));
+                    resp.put("isEdited", args.get(2));
+                    resp.put("isSpam", args.get(3));
+                    resp.put("idDeleted", args.get(4));
+                    resp.put("creation_date", args.get(5));
+                    resp.put("thread", args.get(6));
+                    resp.put("user_email", args.get(7));
+                    resp.put("forum", args.get(8));
+                    resp.put("message",args.get(9));
+                    resp.put("parent",args.get(10));
 
-            }
+
+
         } else {
             System.out.println("error");
             return null;

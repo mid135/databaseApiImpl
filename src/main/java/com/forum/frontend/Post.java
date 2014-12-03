@@ -85,10 +85,11 @@ public class Post extends HttpServlet {
         response.setContentType("application/json;charset=utf-8");
         DBAdapter adapter = DBAdapter.getDBAdapter();
         JSONObject output = new JSONObject();
+        JSONObject input = adapter.parseJSON(request.getReader());
         switch  (urlRequest[4]) {
             case "create": {
                 try {
-                    JSONObject input = adapter.parseJSON(request.getReader());
+
                     LinkedHashMap body;
                     body = adapter.post_create(input.get("date").toString(),
                             Integer.valueOf(input.get("thread").toString()),
@@ -119,7 +120,7 @@ public class Post extends HttpServlet {
             }
             case "update": {
                 try {
-                    JSONObject input = adapter.parseJSON(request.getReader());
+
                     LinkedHashMap body = adapter.post_update(Integer.valueOf(input.get("post").toString()),
                             input.get("message").toString()
                     );
@@ -139,7 +140,7 @@ public class Post extends HttpServlet {
             }
             case "remove": {
                 try {
-                    JSONObject input = adapter.parseJSON(request.getReader());
+
                     LinkedHashMap body = adapter.post_remove(Integer.valueOf(input.get("post").toString()));
                     if (body != null) {
                         output.put("code", 0);
@@ -157,7 +158,7 @@ public class Post extends HttpServlet {
             }
             case "restore": {
                 try {
-                    JSONObject input = adapter.parseJSON(request.getReader());
+
                     LinkedHashMap body = adapter.post_restore(Integer.valueOf(input.get("post").toString()));
                     if (body != null) {
                         output.put("code", 0);
@@ -175,7 +176,7 @@ public class Post extends HttpServlet {
             }
             case "vote" :{
                 try {
-                    JSONObject input = adapter.parseJSON(request.getReader());
+
                     LinkedHashMap body = adapter.post_vote(Integer.valueOf(input.get("vote").toString()),Integer.valueOf(input.get("post").toString()));
                     if (body != null) {
                         output.put("code", 0);
