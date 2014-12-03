@@ -181,6 +181,70 @@ public class DBAdapter {
         return response;
     }
 
+    public ArrayList forum_listUsers(String forum, String since, Integer limit,String order) {
+        ArrayList result = new ArrayList();
+
+        ArrayList args = new ArrayList();
+        args.add(forum);
+        args.add(since);
+        args.add(limit);
+        CachedRowSetImpl users;
+        try {
+            if (order.equals("asc")) {
+                users=doSelect("SELECT t2.`email` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t1.`creation_date`>=? GROUP BY t2.id ORDER BY t2.name ASC LIMIT ?", args);
+            } else {
+                users = doSelect("SELECT t2.`email` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t1.`creation_date`>=? GROUP BY t2.id ORDER BY t2.name DESC LIMIT ?", args);
+            }
+            args.clear();
+            while (users.next()) {
+                args.add(users.getString(1));
+                LinkedHashMap resp = new LinkedHashMap();
+                CachedRowSetImpl user = doSelect("SELECT `id`,`name`,`user_name`,`about`,`email`,`isAnonymous` FROM `forum_db`.`User` as t1 WHERE t1.email IN (?); ", args);
+                CachedRowSetImpl followers = doSelect("SELECT `follower_mail` FROM `forum_db`.`user_followers` as t1 WHERE t1.`user_mail`=?;", args);
+                CachedRowSetImpl following = doSelect("SELECT `user_mail` FROM `forum_db`.`user_followers` as t1 WHERE t1.`follower_mail`=?;", args);
+                CachedRowSetImpl threads = doSelect("SELECT `thread_id` FROM `forum_db`.`thread_followers` as t1 WHERE t1.`user_mail`=?;", args);
+                while (user.next()) {
+                    if (user.getString(6).equals("false")) {
+                        resp.put("about", user.getString(4).equals("") ? null : user.getString(4));
+                        resp.put("email", user.getString(5));
+                        resp.put("id", user.getString(1));
+                        resp.put("isAnonymous", false);
+                        resp.put("name", user.getString(2));
+                        resp.put("username", user.getString(3).equals("") ? null : user.getString(3));
+                    } else {
+                        resp.put("email", user.getString(5));
+                        resp.put("id", user.getString(1));
+                        resp.put("about", null);
+                        resp.put("name", null);
+                        resp.put("username", null);
+                        resp.put("isAnonymous", true);
+                    }
+                    //JSONArray followerArray=new JSONArray();
+                    ArrayList followerArray = new ArrayList();
+                    while (followers.next()) {
+                        followerArray.add(followers.getString(1));
+                    }
+                    resp.put("followers", followerArray);
+                    ArrayList followingArray = new ArrayList();
+                    //JSONArray followingArray = new JSONArray();
+                    while (following.next()) {
+                        followingArray.add(following.getString(1));
+                    }
+                    resp.put("following", followingArray);
+                    HashSet subscriptionArray = new HashSet();
+                    while (threads.next()) {
+                        subscriptionArray.add(threads.getInt(1));
+                    }
+                    resp.put("subscriptions", subscriptionArray);
+                    result.add(resp);
+                    args.clear();
+                }
+            }
+        } catch(SQLException e) {
+            return null;
+        }
+        return result;
+    }
 
     public LinkedHashMap user_create(String username, String about,Boolean isAnomymous, String name, String email) {
         LinkedHashMap resp = new LinkedHashMap();

@@ -45,13 +45,30 @@ public class Forum extends HttpServlet{
                         output.put("response","error");
                     }
                     break;
-                case "listPosts":
-
+                case "listUsers":
+                    try {
+                        ArrayList bodyIsReady = adapter.forum_listUsers(request.getParameter("forum").toString(),
+                                request.getParameter("since")!=null?request.getParameter("since").toString():"1970-01-01",
+                                request.getParameter("limit")!=null?Integer.valueOf(request.getParameter("limit").toString()):10000,
+                                request.getParameter("order")!=null?request.getParameter("order").toString():"desc"
+                        );
+                        if (bodyIsReady != null) {
+                            output.put("code", 0);
+                            output.put("response", bodyIsReady);
+                        } else {
+                            output.put("code", 1);
+                            output.put("response", "error");
+                        }
+                    } catch (NullPointerException e) {
+                        output.clear();
+                        output.put("code", 2);
+                        output.put("response", "invalid query");
+                    }
                     break;
                 case "listThreads":
 
                     break;
-                case "listUser":
+                case "listPosts":
 
                     break;
             }
