@@ -48,7 +48,7 @@ public class Forum extends HttpServlet{
                 case "listUsers":
                     try {
                         ArrayList bodyIsReady = adapter.forum_listUsers(request.getParameter("forum").toString(),
-                                request.getParameter("since")!=null?request.getParameter("since").toString():"1970-01-01",
+                                request.getParameter("since_id")!=null?Integer.valueOf(request.getParameter("since_id").toString()):1,
                                 request.getParameter("limit")!=null?Integer.valueOf(request.getParameter("limit").toString()):10000,
                                 request.getParameter("order")!=null?request.getParameter("order").toString():"desc"
                         );

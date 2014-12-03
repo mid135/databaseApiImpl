@@ -181,19 +181,19 @@ public class DBAdapter {
         return response;
     }
 
-    public ArrayList forum_listUsers(String forum, String since, Integer limit,String order) {
+    public ArrayList forum_listUsers(String forum, Integer since_id, Integer limit,String order) {
         ArrayList result = new ArrayList();
 
         ArrayList args = new ArrayList();
         args.add(forum);
-        args.add(since);
+        args.add(since_id);
         args.add(limit);
         CachedRowSetImpl users;
         try {
             if (order.equals("asc")) {
-                users=doSelect("SELECT t2.`email` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t1.`creation_date`>=? GROUP BY t2.id ORDER BY t2.name ASC LIMIT ?", args);
+                users=doSelect("SELECT t2.`email` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=? GROUP BY t2.id ORDER BY t2.name ASC LIMIT ?", args);
             } else {
-                users = doSelect("SELECT t2.`email` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t1.`creation_date`>=? GROUP BY t2.id ORDER BY t2.name DESC LIMIT ?", args);
+                users = doSelect("SELECT t2.`email` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=? GROUP BY t2.id ORDER BY t2.name DESC LIMIT ?", args);
             }
             args.clear();
             while (users.next()) {
