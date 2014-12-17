@@ -30,7 +30,7 @@ public class DBAdapter {
 
     private static DBAdapter instance;
     Connection conection;
-    public DBAdapter() {
+    private DBAdapter() {
         try {
             Driver driver = new FabricMySQLDriver();
             DriverManager.registerDriver(driver);
@@ -38,6 +38,8 @@ public class DBAdapter {
         } catch (SQLException e) {
             System.err.println("Не удалось загрузить драйвер !!!");
         }
+        ArrayList ef = new ArrayList();
+        doSQL("USE `forum_db`",ef);
 
     }
 
@@ -102,6 +104,7 @@ public class DBAdapter {
                 statement.executeUpdate();
             int id = 0;
             ResultSet res = statement.getGeneratedKeys();
+
             if (res.next()) {//предполагается, что update на одну строку
                 id = res.getInt(1);
             }
@@ -113,6 +116,7 @@ public class DBAdapter {
 
         }
     }
+
 
     //system
     public void clear() {//очистить БД
@@ -163,6 +167,7 @@ public class DBAdapter {
                 response.put("id", res.getInt("id"));
                 response.put("name", res.getString("name"));
                 response.put("short_name", res.getString("short_name"));
+
                 if (relatedUser!=null && Arrays.asList(relatedUser).contains("user")) {
                     args.clear();
                     args.add(res.getString("user_mail"));
@@ -550,7 +555,7 @@ public class DBAdapter {
         args.add(5,isDeleted?1:0);
         args.add(6,message);
         args.add(7,slug);
-        int resId = doSQL("INSERT INTO `forum_db`.`Thread` (`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`) VALUES (?,?,?,?,?,?,?,?);",args);
+        int resId = doSQL("INSERT INTO `forum_db`.`Thread` (`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`posts`) VALUES (?,?,?,?,?,?,?,?,0);",args);
         if (resId > 0) {
                     resp.put("date", args.get(3));
                     resp.put("forum", args.get(0));
@@ -571,23 +576,14 @@ public class DBAdapter {
         LinkedHashMap response = new LinkedHashMap();
         ArrayList args = new ArrayList();
         args.add(0,Integer.valueOf(topicId));
-        CachedRowSetImpl res =  doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` as points FROM `forum_db`.`Thread` as t1 WHERE t1.id=?;",args);
+        CachedRowSetImpl res =  doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` as points,`posts` FROM `forum_db`.`Thread` as t1 WHERE t1.id=?;",args);
         try {
             while (res.next()) {
                 LinkedHashMap user = new LinkedHashMap();
                 LinkedHashMap forum = new LinkedHashMap();
                 response.put("date", res.getDate(5)+" "+res.getTime(5));
                 response.put("id", res.getInt(1));
-                {
-                    args.clear();
-                    args.add(0, res.getInt(1));
-                    CachedRowSetImpl count = doSelect("SELECT count(t1.`id`) as posts FROM `forum_db`.`Post` as t1 WHERE t1.`isDeleted`=0 and t1.`thread`=?;",args);
-                    if (count.next()) {
-                        response.put("posts",count.getInt(1));
-                    } else {
-                        response.put("posts",0);
-                    }
-                }
+                response.put("posts",res.getString(7).equals("true")==true?0:res.getInt(13));
                 response.put("isDeleted", (res.getString(7).equals("true")));
                 response.put("isClosed", (res.getString(6).equals("true")));
                 response.put("message", res.getString(8));
@@ -609,6 +605,8 @@ public class DBAdapter {
                 } else {
                     response.put("forum", res.getString("forum"));
                 }
+
+
             }
         } catch (SQLException r) {
             System.out.println("error");
@@ -643,10 +641,19 @@ public class DBAdapter {
     public LinkedHashMap topic_restore(Integer topicId) {
         ArrayList args = new ArrayList();
         args.add(0,topicId);
-        Integer id = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`isDeleted`=False WHERE t1.`id`=?;",args);
+        Integer id0 = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`isDeleted`=False WHERE t1.`id`=?;",args);
         Integer id2 = doSQL("UPDATE `forum_db`.`Post` as t1 SET t1.`isDeleted`=False WHERE t1.`thread`=?",args);
+        CachedRowSetImpl res= doSelect("SELECT count(id) FROM Post WHERE thread=? ",args);
+        Integer p_c=0;
+        try {
+            if (res.next()){
+                p_c = res.getInt(1);
+            }
+        } catch(SQLException e) {}
+        args.clear();args.add(0, p_c);args.add(1,topicId);
+        Integer id = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`posts`=? WHERE t1.`id`=?;",args);
         LinkedHashMap resp = new LinkedHashMap();
-        if (id>=0&id2>=0) {
+        if (id0>=0&id>=0&id2>=0) {
             resp.put("thread", id);
         }
         return resp;
@@ -728,16 +735,16 @@ public class DBAdapter {
         if (forum != null) {
             args.set(0, forum);
             if (order.equals("asc")) {
-                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` FROM `forum_db`.`Thread` as t1 WHERE t1.`forum`=? AND t1.`date`>?  ORDER BY t1.`id`ASC LIMIT ? ", args);
+                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes`,`posts` FROM `forum_db`.`Thread` as t1 WHERE t1.`forum`=? AND t1.`date`>?  ORDER BY t1.`id`ASC LIMIT ? ", args);
             } else {
-                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` FROM `forum_db`.`Thread` as t1 WHERE t1.`forum`=? AND t1.`date`>?  ORDER BY t1.`id`DESC LIMIT ? ", args);
+                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes`,`posts` FROM `forum_db`.`Thread` as t1 WHERE t1.`forum`=? AND t1.`date`>?  ORDER BY t1.`id`DESC LIMIT ? ", args);
             }
         } else {
             args.set(0, user);
             if (order.equals("asc")) {
-                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` FROM `forum_db`.`Thread` as t1 WHERE t1.`user`=? AND t1.`date`>?  ORDER BY t1.`id`ASC LIMIT ? ", args);
+                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes`,`posts` FROM `forum_db`.`Thread` as t1 WHERE t1.`user`=? AND t1.`date`>?  ORDER BY t1.`id`ASC LIMIT ? ", args);
             } else {
-                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes` FROM `forum_db`.`Thread` as t1 WHERE t1.`user`=? AND t1.`date`>?  ORDER BY t1.`id`DESC LIMIT ? ", args);
+                res = doSelect("SELECT `id`,`forum`,`title`,`user`,`date`,`isClosed`,`isDeleted`,`message`,`slug`,`likes`,`likes`-`dislikes`,`dislikes`,`posts` FROM `forum_db`.`Thread` as t1 WHERE t1.`user`=? AND t1.`date`>?  ORDER BY t1.`id`DESC LIMIT ? ", args);
             }
         }
 
@@ -746,16 +753,7 @@ public class DBAdapter {
                 LinkedHashMap elem = new LinkedHashMap();
                 elem.put("date", res.getDate(5)+" "+res.getTime(5));
                 elem.put("id", res.getInt(1));
-                {
-                    args.clear();
-                    args.add(0, res.getInt(1));
-                    CachedRowSetImpl count = doSelect("SELECT count(t1.`id`) as posts FROM `forum_db`.`Post` as t1 WHERE t1.`isDeleted`=0 and t1.`thread`=?;",args);
-                    if (count.next()) {
-                        elem.put("posts",count.getInt(1));
-                    } else {
-                        elem.put("posts",0);
-                    }
-                }
+                elem.put("posts",res.getInt(13));
                 elem.put("isDeleted", (res.getString(7).equals("true")));
                 elem.put("isClosed", (res.getString(6).equals("true")));
                 elem.put("message", res.getString(8));
@@ -836,24 +834,22 @@ public class DBAdapter {
 
         int resId = doSQL("INSERT INTO `forum_db`.`Post` (`isApproved`,`isHighLighted`,`isEdited`,`isSpam`,`isDeleted`,`creation_date`,`thread`,`user_email`,`forum`,`message`,`parent`) VALUES (?,?,?,?,?,?,?,?,?,?,?);",args);
         if (resId > 0) {
-
-
             args.add(0,resId);
-
-                    resp.put("id", resId);
-                    resp.put("isApproved", args.get(0));
-                    resp.put("isHighlighted", args.get(1));
-                    resp.put("isEdited", args.get(2));
-                    resp.put("isSpam", args.get(3));
-                    resp.put("idDeleted", args.get(4));
-                    resp.put("creation_date", args.get(5));
-                    resp.put("thread", args.get(6));
-                    resp.put("user_email", args.get(7));
-                    resp.put("forum", args.get(8));
-                    resp.put("message",args.get(9));
-                    resp.put("parent",args.get(10));
-
-
+            ArrayList upd_arg = new ArrayList();
+            upd_arg.add(threadId);
+            int upd_count = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`posts`=t1.`posts`+1 WHERE t1.`id`=?;",upd_arg);
+            resp.put("id", resId);
+            resp.put("isApproved", isApproved);
+            resp.put("isHighlighted", isHighlighted);
+            resp.put("isEdited", isEdited);
+            resp.put("isSpam", isSpam);
+            resp.put("idDeleted", isDeleted);
+            resp.put("creation_date", args.get(5));
+            resp.put("thread", args.get(6));
+            resp.put("user_email", args.get(7));
+            resp.put("forum", args.get(8));
+            resp.put("message",args.get(9));
+            resp.put("parent",args.get(10));
 
         } else {
             System.out.println("error");
@@ -926,20 +922,40 @@ public class DBAdapter {
     public LinkedHashMap post_remove(Integer postId) {
         ArrayList args = new ArrayList();
         args.add(0,postId);
-        Integer id = doSQL("UPDATE `forum_db`.`Post` as t1 SET t1.`isDeleted`=True WHERE t1.`id`=?;",args);
+        Integer id=doSQL("UPDATE Post as p SET p.isDeleted=true WHERE p.id=?",args);
+        CachedRowSetImpl res = doSelect("SELECT t1.thread FROM Post as t1 WHERE t1.id=?",args);
+        Integer id2=0;
+        try {
+            if (res.next()) {
+                id2=Integer.valueOf(res.getString(1));
+            }
+        } catch(SQLException e) {}
         LinkedHashMap resp = new LinkedHashMap();
-        if (id>0) {
-            resp.put("post", id);
+        if (id2>=0) {
+            args.clear();
+            args.add(0,id2);//aka thead_id
+            doSQL("UPDATE Thread as t SET t.posts=t.posts-1 WHERE t.id=?",args);
+            resp.put("post", postId);
         }
         return resp;
     }
     public LinkedHashMap post_restore(Integer postId) {
         ArrayList args = new ArrayList();
         args.add(0,postId);
-        Integer id = doSQL("UPDATE `forum_db`.`Post` as t1 SET t1.`isDeleted`=False WHERE t1.`id`=?;",args);
+        Integer id=doSQL("UPDATE Post as p SET p.isDeleted=false WHERE p.id=?",args);
+        CachedRowSetImpl res = doSelect("SELECT t1.thread FROM Post as t1 WHERE t1.id=?",args);
+        Integer id2=0;
+        try {
+            if (res.next()) {
+                id2=Integer.valueOf(res.getString(1));
+            }
+        } catch(SQLException e) {}
         LinkedHashMap resp = new LinkedHashMap();
-        if (id>0) {
-            resp.put("post", id);
+        if (id2>=0) {
+            args.clear();
+            args.add(0,id2);//aka thead_id
+            doSQL("UPDATE Thread as t SET t.posts=t.posts+1 WHERE t.id=?",args);
+            resp.put("post", postId);
         }
         return resp;
     }
