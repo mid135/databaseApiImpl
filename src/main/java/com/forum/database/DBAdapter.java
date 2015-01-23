@@ -583,7 +583,8 @@ public class DBAdapter {
                 LinkedHashMap forum = new LinkedHashMap();
                 response.put("date", res.getDate(5)+" "+res.getTime(5));
                 response.put("id", res.getInt(1));
-                response.put("posts",res.getString(7).equals("true")==true?0:res.getInt(13));
+                //response.put("posts",res.getString(7).equals("true")==true?0:res.getInt(13));
+                response.put("posts",res.getInt(13));//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 response.put("isDeleted", (res.getString(7).equals("true")));
                 response.put("isClosed", (res.getString(6).equals("true")));
                 response.put("message", res.getString(8));
@@ -630,7 +631,7 @@ public class DBAdapter {
     public LinkedHashMap topic_remove(Integer topicId) {
         ArrayList args = new ArrayList();
         args.add(0,topicId);
-        Integer id = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`isDeleted`=True WHERE t1.`id`=?;",args);
+        Integer id = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`isDeleted`=True, t1.`posts`=0 WHERE t1.`id`=?;",args);
         Integer id2 = doSQL("UPDATE `forum_db`.`Post` as t1 SET t1.`isDeleted`=True WHERE t1.`thread`=?",args);
         LinkedHashMap resp = new LinkedHashMap();
         if (id>=0 & id2>=0) {
@@ -643,14 +644,16 @@ public class DBAdapter {
         args.add(0,topicId);
         Integer id0 = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`isDeleted`=False WHERE t1.`id`=?;",args);
         Integer id2 = doSQL("UPDATE `forum_db`.`Post` as t1 SET t1.`isDeleted`=False WHERE t1.`thread`=?",args);
-        CachedRowSetImpl res= doSelect("SELECT count(id) FROM Post WHERE thread=? ",args);
+        CachedRowSetImpl res= doSelect("SELECT count(id) FROM `forum_db`.Post as t1  WHERE t1.thread=? and t1.isDeleted=false ",args);
         Integer p_c=0;
         try {
-            if (res.next()){
-                p_c = res.getInt(1);
+          if (res.next()){
+               p_c = res.getInt(1);
             }
         } catch(SQLException e) {}
-        args.clear();args.add(0, p_c);args.add(1,topicId);
+        args.clear();
+        args.add(0, p_c);
+        args.add(1,topicId);
         Integer id = doSQL("UPDATE `forum_db`.`Thread` as t1 SET t1.`posts`=? WHERE t1.`id`=?;",args);
         LinkedHashMap resp = new LinkedHashMap();
         if (id0>=0&id>=0&id2>=0) {

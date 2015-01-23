@@ -23,8 +23,8 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
         <module name="com.abovyan.database" />
+        <module name="database" />
       </profile>
     </annotationProcessing>
   </component>
 </project>
-
