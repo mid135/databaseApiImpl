@@ -30,7 +30,7 @@ public class DBAdapter {
 
     private static DBAdapter instance;
     Connection conection;
-    private DBAdapter() {
+    public  DBAdapter() {
         try {
             Driver driver = new FabricMySQLDriver();
             DriverManager.registerDriver(driver);
@@ -39,16 +39,13 @@ public class DBAdapter {
             System.err.println("Не удалось загрузить драйвер !!!");
         }
         ArrayList ef = new ArrayList();
-        doSQL("USE `forum_db`",ef);
+       // doSQL("USE `forum_db`",ef);
 
     }
-
-    public static synchronized DBAdapter getDBAdapter() {
-       if (instance == null) {
-           instance =  new DBAdapter();
-
-       }
-       return instance;
+    public void close() {
+        try {
+            this.conection.close();
+        } catch (SQLException e) {};
     }
 
     public JSONObject parseJSON(BufferedReader reader) throws IOException{
@@ -62,12 +59,14 @@ public class DBAdapter {
         } catch (Exception e) { /*report an error*/ }
 
         try {
-            inputJSON = (JSONObject)parser.parse(jb.toString());
+
+            inputJSON = (JSONObject)parser.parse(jb.toString().replace("\'","\""));
 
         } catch (ParseException e) {
-            // crash and burn
+            System.err.println(jb.toString());
             throw new IOException("Error parsing JSON request string");
         }
+
         return inputJSON;
     }
 
@@ -83,16 +82,16 @@ public class DBAdapter {
             }
             ResultSet res = statement.executeQuery();
             set.populate(res);
-
+            statement.close();
             return set;
         } catch (SQLException e) {
-            System.err.println("Ошибка");
+            System.err.println("Ошибка"+query+args);
             return null;
         }
 
     }
 
-    private int doSQL(String query,ArrayList args) {
+    private synchronized int doSQL(String query,ArrayList args) {
 
         try(
             PreparedStatement statement = conection.prepareStatement(query,Statement.RETURN_GENERATED_KEYS)) {
@@ -108,12 +107,15 @@ public class DBAdapter {
             if (res.next()) {//предполагается, что update на одну строку
                 id = res.getInt(1);
             }
-
+            statement.close();
             return  id;
         } catch (SQLException e) {
+            //System.err.println("Ошибка базы данных"+query+args.toString());
+
+            return -1;
+        } catch (NullPointerException n) {
             System.err.println("Ошибка базы данных"+query+args.toString());
             return -1;
-
         }
     }
 
@@ -194,9 +196,9 @@ public class DBAdapter {
         try {
             if (order.equals("asc")) {
                 //TODO WTF    -1 IN ID???????
-                users=doSelect("SELECT t2.`email`,t2.`name` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=?-1 GROUP BY t2.id ORDER BY t2.name ASC LIMIT ?", args);
+                users=doSelect("SELECT t2.`email`,t2.`name` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=? GROUP BY t2.id ORDER BY t2.name ASC LIMIT ?", args);
             } else {
-                users = doSelect("SELECT t2.`email`,t2.`name` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=?-1 GROUP BY t2.id ORDER BY t2.name DESC LIMIT ?", args);
+                users = doSelect("SELECT t2.`email`,t2.`name` FROM `forum_db`.`Post` as t1 LEFT JOIN `forum_db`.`User` as t2 ON t1.user_email=t2.email WHERE t1.forum=? and t2.`id`>=? GROUP BY t2.id ORDER BY t2.name DESC LIMIT ?", args);
             }
             args.clear();
             while (users.next()) {
@@ -925,8 +927,8 @@ public class DBAdapter {
     public LinkedHashMap post_remove(Integer postId) {
         ArrayList args = new ArrayList();
         args.add(0,postId);
-        Integer id=doSQL("UPDATE Post as p SET p.isDeleted=true WHERE p.id=?",args);
-        CachedRowSetImpl res = doSelect("SELECT t1.thread FROM Post as t1 WHERE t1.id=?",args);
+        Integer id=doSQL("UPDATE `forum_db`.Post as p SET p.isDeleted=true WHERE p.id=?",args);
+        CachedRowSetImpl res = doSelect("SELECT t1.thread FROM `forum_db`.Post as t1 WHERE t1.id=?",args);
         Integer id2=0;
         try {
             if (res.next()) {
@@ -937,7 +939,7 @@ public class DBAdapter {
         if (id2>=0) {
             args.clear();
             args.add(0,id2);//aka thead_id
-            doSQL("UPDATE Thread as t SET t.posts=t.posts-1 WHERE t.id=?",args);
+            doSQL("UPDATE `forum_db`.Thread as t SET t.posts=t.posts-1 WHERE t.id=?",args);
             resp.put("post", postId);
         }
         return resp;
@@ -945,8 +947,8 @@ public class DBAdapter {
     public LinkedHashMap post_restore(Integer postId) {
         ArrayList args = new ArrayList();
         args.add(0,postId);
-        Integer id=doSQL("UPDATE Post as p SET p.isDeleted=false WHERE p.id=?",args);
-        CachedRowSetImpl res = doSelect("SELECT t1.thread FROM Post as t1 WHERE t1.id=?",args);
+        Integer id=doSQL("UPDATE `forum_db`.Post as p SET p.isDeleted=false WHERE p.id=?",args);
+        CachedRowSetImpl res = doSelect("SELECT t1.thread FROM `forum_db`.`Post` as t1 WHERE t1.id=?",args);
         Integer id2=0;
         try {
             if (res.next()) {
@@ -957,7 +959,7 @@ public class DBAdapter {
         if (id2>=0) {
             args.clear();
             args.add(0,id2);//aka thead_id
-            doSQL("UPDATE Thread as t SET t.posts=t.posts+1 WHERE t.id=?",args);
+            doSQL("UPDATE `forum_db`.Thread as t SET t.posts=t.posts+1 WHERE t.id=?",args);
             resp.put("post", postId);
         }
         return resp;

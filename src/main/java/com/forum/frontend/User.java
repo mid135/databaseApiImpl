@@ -24,7 +24,7 @@ public class User  extends HttpServlet {
                       HttpServletResponse response) throws ServletException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
         JSONObject output = new JSONObject();
-        DBAdapter adapter = DBAdapter.getDBAdapter();
+        DBAdapter adapter = new DBAdapter();
         response.setContentType("application/json;charset=utf-8");
         switch (urlRequest[4]) {
             case "details": {
@@ -102,6 +102,7 @@ public class User  extends HttpServlet {
             }
 
         }
+        adapter.close();
         response.getWriter().println(output.toString());
         response.setStatus(HttpServletResponse.SC_OK);
     }
@@ -111,7 +112,7 @@ public class User  extends HttpServlet {
                        HttpServletResponse response) throws ServletException,RuntimeException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
         response.setContentType("application/json;charset=utf-8");
-        DBAdapter adapter = DBAdapter.getDBAdapter();
+        DBAdapter adapter = new DBAdapter();
         JSONObject output = new JSONObject();
         switch  (urlRequest[4]) {
             case "create": {
@@ -139,7 +140,6 @@ public class User  extends HttpServlet {
                     output.put("code", 2);
                     output.put("response", "invalid query");
                 }
-
                 break;
             }
             case "updateProfile":{
@@ -204,6 +204,7 @@ public class User  extends HttpServlet {
                 break;
             }
         }
+        adapter.close();
         response.getWriter().println(output.toString());
         response.setStatus(HttpServletResponse.SC_OK);
     }

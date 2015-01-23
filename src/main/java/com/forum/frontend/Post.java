@@ -21,7 +21,7 @@ public class Post extends HttpServlet {
                       HttpServletResponse response) throws ServletException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
         JSONObject output = new JSONObject();
-        adapter = DBAdapter.getDBAdapter();
+        adapter = new DBAdapter();
         switch (urlRequest[4]) {
             case "details":
                 response.setContentType("application/json;charset=utf-8");
@@ -74,6 +74,7 @@ public class Post extends HttpServlet {
             }
 
         }
+        adapter.close();
         response.getWriter().println(output.toString());
         response.setStatus(HttpServletResponse.SC_OK);
     }
@@ -83,7 +84,7 @@ public class Post extends HttpServlet {
                        HttpServletResponse response) throws ServletException,RuntimeException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
         response.setContentType("application/json;charset=utf-8");
-        DBAdapter adapter = DBAdapter.getDBAdapter();
+        DBAdapter adapter = new DBAdapter();
         JSONObject output = new JSONObject();
         JSONObject input = adapter.parseJSON(request.getReader());
         switch  (urlRequest[4]) {
@@ -194,6 +195,7 @@ public class Post extends HttpServlet {
             }
 
         }
+        adapter.close();
         response.getWriter().println(output.toString());
         response.setStatus(HttpServletResponse.SC_OK);
     }

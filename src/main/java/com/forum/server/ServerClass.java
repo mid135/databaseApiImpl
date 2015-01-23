@@ -22,7 +22,7 @@ public class ServerClass {
         Topic thread = new Topic();
         Post post = new Post();
 
-        Server server = new Server(8080);
+        Server server = new Server(7878);
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         server.setHandler(context);
         //context.addServlet(new ServletHolder(frontend), "/*");

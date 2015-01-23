@@ -32,7 +32,7 @@ public class Forum extends HttpServlet{
         response.setContentType("application/json;charset=utf-8");
         response.setCharacterEncoding("UTF-8");
         JSONObject output  = new JSONObject();
-        adapter = DBAdapter.getDBAdapter();
+        adapter = new DBAdapter();
         LinkedHashMap body;
         ArrayList body_arr;
         switch (urlRequest[4]) {
@@ -96,7 +96,7 @@ public class Forum extends HttpServlet{
                     break;
             }
 
-
+        adapter.close();
         response.setStatus(HttpServletResponse.SC_OK);
         response.getWriter().println(output.toString());
     }
@@ -105,7 +105,7 @@ public class Forum extends HttpServlet{
     public void doPost(HttpServletRequest request,
                       HttpServletResponse response) throws ServletException,RuntimeException, IOException {
         String[] urlRequest = request.getRequestURI().toString().split("/");
-        adapter=DBAdapter.getDBAdapter();
+        adapter=new DBAdapter();
         JSONObject output = new JSONObject();
         if  (urlRequest[4].equals("create")) {
             response.setContentType("application/json;charset=utf-8");
@@ -120,6 +120,7 @@ public class Forum extends HttpServlet{
                 output.put("response","error");
             }
          }
+        adapter.close();
         response.setStatus(HttpServletResponse.SC_OK);
         response.getWriter().println(output.toString());
 
